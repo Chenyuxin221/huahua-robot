@@ -45,17 +45,13 @@ class GroupListener {
      * @receiver GroupMessageEvent
      */
     @RobotListen(isBoot = true, desc = "菜单服务")
+    @Filter(".h|.help", matchType = MatchType.REGEX_MATCHES)
     suspend fun GroupMessageEvent.menu(){
-        val msg = messageContent.plainText.trim()
         val functionMenuUrl = "https://www.yuque.com/qingsi-zwnmu/xyuvvi/wrbzgy"
         val gitHubUrl = "https://github.com/Chenyuxin221/huahua-robot"
-        val result = if (msg=="帮助"){
-            "功能菜单：${functionMenuUrl}\n"+
-                    "项目地址：${gitHubUrl}"
-        } else {""}
-        if (result.isNotEmpty()){
-            group().send(result)
-        }
+        val result = "功能菜单：${functionMenuUrl}\n项目地址：${gitHubUrl}"
+        group().send(result)
+
     }
 
 
@@ -200,10 +196,6 @@ class GroupListener {
      */
     @RobotListen(isBoot = true, desc = "抽奖服务", permission = RobotPermission.MEMBER)
     suspend fun GroupMessageEvent.luckDraw() {
-        if (group().member(this.bot.id)?.isOwner() == false && group().member(this.bot.id)?.isAdmin() == false){
-            group().send("哎呀，抽奖失败啦~权限不够呢")
-            return
-        }
         val msg = messageContent.plainText
         val lucky = lucky(60)
         var num = 0
@@ -220,6 +212,10 @@ class GroupListener {
             }
         }
         if ((msg == "抽奖" || "cj" == msg) || num == 2) {
+            if (group().member(this.bot.id)?.isOwner() == false && group().member(this.bot.id)?.isAdmin() == false){
+                group().send("哎呀，抽奖失败啦~权限不够呢")
+                return
+            }
             if (author().isAdmin()) {
                 group().send(At(author().id) + " 你抽个屁的奖".toText())
                 return
