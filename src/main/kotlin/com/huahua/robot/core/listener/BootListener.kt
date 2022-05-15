@@ -28,8 +28,13 @@ class BootListener {
     @Filter("开机")
     suspend fun GroupMessageEvent.boot() {
         val groupCode = group().id.toString()
-        logger { "群${groupCode}以开机" }
-        group().send("群${groupCode}以开机")
+        logger { "群${groupCode}已开机" }
+        val str = "-------开机成功-------\n" +
+                "当前群聊：${group().name}\n" +
+                "群号：${group().id}\n" +
+                "操作人：${author().nickOrUsername}\n"+
+                "--------------------"
+        group().send(str)
         bootOrDown(groupCode, true)
     }
 
@@ -37,22 +42,28 @@ class BootListener {
     @Filter("关机")
     suspend fun GroupMessageEvent.down() {
         val groupCode = group().id.toString()
-        logger { "群${groupCode}以关机" }
-        group().send("群${groupCode}以关机")
+        logger { "群${groupCode}已关机" }
+        val str = "-------关机成功-------\n" +
+                "当前群聊：${group().name}\n" +
+                "群号：${group().id}\n" +
+                "操作人：${author().nickOrUsername}\n"+
+                "--------------------"
+        group().send(str)
+        bootOrDown(groupCode,false)
     }
 
     private fun bootOrDown(groupCode: String, state: Boolean) {
         RobotCore.BOOT_MAP[groupCode] = state
         val map  = hashMapOf<String,Any>()
         map["group_code"] = groupCode
-        val groupBootState = mapper?.selectByMap(map)?.firstOrNull()
+        val groupBootState = mapper.selectByMap(map)?.firstOrNull()
 
 
         if (groupBootState == null) {
-            mapper?.insert(BootState(groupCode = groupCode,state = state))
+            mapper.insert(BootState(groupCode = groupCode,state = state))
 
         } else {
-            mapper?.updateById(BootState(groupCode = groupCode,state = state))
+            mapper.updateById(BootState(groupCode = groupCode,state = state))
 
         }
     }

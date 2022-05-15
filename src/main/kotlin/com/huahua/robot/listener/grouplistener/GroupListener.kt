@@ -50,7 +50,7 @@ class GroupListener {
     suspend fun GroupMessageEvent.menu(){
         val msg = messageContent.plainText.trim()
         val functionMenuUrl = "https://www.yuque.com/qingsi-zwnmu/xyuvvi/wrbzgy"
-        val gitHubUrl = "https://github.com/Chenyuxin221/kt-huahua-robot"
+        val gitHubUrl = "https://github.com/Chenyuxin221/huahua-robot"
         val result = if (msg=="帮助"){
             "功能菜单：${functionMenuUrl}\n"+
                     "项目地址：${gitHubUrl}"
