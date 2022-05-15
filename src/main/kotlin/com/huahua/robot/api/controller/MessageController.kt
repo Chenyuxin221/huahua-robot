@@ -51,7 +51,12 @@ class MessageController {
         map["groupId"] = groupId
         map["sendUserCode"] = userId
         //取到退群前发送的最后一条消息
-        val message: Message? = messageMapper.selectByMap(map).last()
+        val messageList: MutableList<Message?>? = messageMapper.selectByMap(map)
+        val message = if (messageList?.isNotEmpty() == true){
+            messageList.first()
+        }else{
+            return MessageResponse(404,Message(),0)
+        }
         if (message!=null){
             if (isOldData) {
                 return MessageResponse(200,message,2)

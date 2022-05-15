@@ -39,6 +39,6 @@ class JoinGroupListener {
         if(group.type.ordinal==1){
             sb.append("\n邀请人：${event.message}")
         }
-        GlobalVariable().BOT?.group(group.id)?.send(sb.toString())
+        GlobalVariable.BOT?.group(group.id)?.send(sb.toString())
     }
 }

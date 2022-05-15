@@ -2,6 +2,7 @@ package com.huahua.robot.listener.grouplistener
 
 import com.google.gson.Gson
 import com.huahua.robot.core.annotation.RobotListen
+import com.huahua.robot.core.enums.RobotPermission
 import com.huahua.robot.entity.Chat
 import com.huahua.robot.entity.LuckyTime
 import com.huahua.robot.entity.Setu
@@ -197,8 +198,12 @@ class GroupListener {
      * 抽奖
      * @receiver GroupMessageEvent
      */
-    @RobotListen(isBoot = true, desc = "抽奖服务")
+    @RobotListen(isBoot = true, desc = "抽奖服务", permission = RobotPermission.MEMBER)
     suspend fun GroupMessageEvent.luckDraw() {
+        if (group().member(this.bot.id)?.isOwner() == false && group().member(this.bot.id)?.isAdmin() == false){
+            group().send("哎呀，抽奖失败啦~权限不够呢")
+            return
+        }
         val msg = messageContent.plainText
         val lucky = lucky(60)
         var num = 0
