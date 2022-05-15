@@ -3,8 +3,6 @@ package com.huahua.robot.api.mapper
 import com.baomidou.mybatisplus.core.mapper.BaseMapper
 import com.huahua.robot.api.entity.Photo
 import org.apache.ibatis.annotations.Mapper
-import org.springframework.stereotype.Component
-import org.springframework.stereotype.Repository
 
 /**
  * ClassName: ImagesUrlMapper

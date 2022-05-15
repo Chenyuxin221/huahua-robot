@@ -1,7 +1,6 @@
 package com.huahua.robot
 
 import love.forte.simboot.autoconfigure.EnableSimbot
-import org.mybatis.spring.annotation.MapperScan
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 

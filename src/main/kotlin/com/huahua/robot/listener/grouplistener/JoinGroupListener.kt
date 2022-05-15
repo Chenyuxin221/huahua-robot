@@ -1,14 +1,9 @@
 package com.huahua.robot.listener.grouplistener
 
 import com.huahua.robot.core.annotation.RobotListen
-import com.huahua.robot.core.util.RobotPermission
 import com.huahua.robot.utils.GlobalVariable
-import love.forte.di.annotation.Beans
-import love.forte.simboot.annotation.Listener
-import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.event.GroupRequestEvent
 import love.forte.simbot.event.JoinRequestEvent
-import love.forte.simbot.event.RequestEvent
 import org.springframework.stereotype.Component
 
 /**

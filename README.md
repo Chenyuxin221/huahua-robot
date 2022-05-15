@@ -1,13 +1,12 @@
 <div align="center">
-    <img src="http://gchat.qpic.cn/gchatpic_new/0/0-0-C59648BA0E460CA10E258D353318D713/0?term=2" alt="logo" style="width:233px ;height:233px;border-radius:50%"/>
+    <img src="https://gchat.qpic.cn/gchatpic_new/0/0-0-C59648BA0E460CA10E258D353318D713/0?term=2" alt="logo" style="width:233px ;height:233px;border-radius:50%"/>
     <p>
     	<h2>
         	花花的聊天机器人项目
     	</h2>
-    </p>
 </div>
 
-该项目为Springboot项目，此项目基于[simbot3 ](https://github.com/simple-robot/simbot-component-mirai)，实现了其中的mirai组件
+该项目为Springboot项目，此项目基于[simbot3](https://github.com/simple-robot/simbot-component-mirai)，实现了其中的mirai组件
 
 
 
@@ -15,11 +14,11 @@
 
 菜单地址：[3.x 功能菜单](https://www.yuque.com/qingsi-zwnmu/xyuvvi/wrbzgy)
 
-内置WebApi: [api文档](“https://www.baidu.com”)
+内置WebApi: [api文档](https://www.baidu.com)
 
 ## 项目地址
 
-https://github.com/Chenyuxin221/kt-huahua-robot
+[GitHub](https://github.com/Chenyuxin221/huahua-robot)
 
 ## 运行环境
 
@@ -33,7 +32,7 @@ kotlin 基础，Springboot 常用注解
 
 ### 下载项目
 
-安装了git可以直接执行`clone git@github.com:Chenyuxin221/kt-huahua-robot.git`
+安装了git可以直接执行`clone git@github.com:Chenyuxin221/huahua-robot.git`
 
 或者可以去GitHub上下载压缩包，解压缩后导入到你idea
 
@@ -70,7 +69,7 @@ bot.bot
 
 application.properties
 
-```
+```properties
 simbot.core.keep-alive=true
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 spring.datasource.url=你的数据库地址
@@ -85,4 +84,3 @@ spring.datasource.password=用户密码
 ### 运行Bot	
 
 运行[HuahuaRobotApplication.kt](./src/main/kotlin/com/huahua/robot/HuahuaRobotApplication.kt)文件
-

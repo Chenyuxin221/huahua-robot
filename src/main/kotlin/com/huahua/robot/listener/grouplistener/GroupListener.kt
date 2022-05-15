@@ -2,7 +2,6 @@ package com.huahua.robot.listener.grouplistener
 
 import com.google.gson.Gson
 import com.huahua.robot.core.annotation.RobotListen
-import com.huahua.robot.core.util.RobotPermission
 import com.huahua.robot.entity.Chat
 import com.huahua.robot.entity.LuckyTime
 import com.huahua.robot.entity.Setu
@@ -15,12 +14,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
-import love.forte.simboot.annotation.Listener
 import love.forte.simboot.annotation.TargetFilter
 import love.forte.simboot.filter.MatchType
-import love.forte.simbot.ID
 import love.forte.simbot.LoggerFactory
 import love.forte.simbot.component.mirai.extra.catcode.catCodeToMessage
 import love.forte.simbot.event.GroupMessageEvent
