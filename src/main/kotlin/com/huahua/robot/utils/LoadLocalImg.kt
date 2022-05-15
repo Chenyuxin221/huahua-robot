@@ -16,6 +16,7 @@ class LoadLocalImg {
      * 扫描本地文件
      */
     fun loadLocalImage():ArrayList<String>{
+        //这里自己添加本地图片扫描的文件夹
         scanFile("D:\\新建文件夹\\pictures\\images")
         scanFile("D:\\新建文件夹\\pictures\\image")
         scanFile("D:\\新建文件夹\\pictures\\m_image")

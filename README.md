@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="https://gchat.qpic.cn/gchatpic_new/0/0-0-C59648BA0E460CA10E258D353318D713/0?term=2" alt="logo" style="width:233px ;height:233px;border-radius:50%"/>
+    <img src="http://gchat.qpic.cn/gchatpic_new/0/0-0-C59648BA0E460CA10E258D353318D713/0?term=2" alt="logo" style="width:233px ;height:233px;border-radius:50%"/>
     <p>
     	<h2>
         	花花的聊天机器人项目

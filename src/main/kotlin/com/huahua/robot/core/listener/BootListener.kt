@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component
  * @author wuyou,花云端
  */
 @Component
+@SuppressWarnings("unused")
 class BootListener {
 
     @Autowired

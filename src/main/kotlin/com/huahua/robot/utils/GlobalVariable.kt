@@ -6,38 +6,26 @@ import love.forte.simbot.ID
 @SuppressWarnings("unused")
 class GlobalVariable {
 
+    companion object{
+        /**
+         * 全局bot
+         */
+        var BOT:Bot? = null
 
-    /**
-     * 百度翻译
-     */
-    val App_ID: String = "20210225000707511"
-    val SECURITY_KEY: String = "vef71g0p0iTyRtM5bLIh"
+        /**
+         * 机器人主人
+         */
+        val MASTER = "189950046".ID
 
-    /**
-     * 全局bot
-     */
-    var BOT:Bot? = null
+        /**
+         * 主机器人
+         */
+        val BOTID = "1849950085".ID
 
-    /**
-     * 机器人主人
-     */
-    val MASTER = "189950046".ID
-
-    /**
-     * 主机器人
-     */
-    val BOTID = "1849950085".ID
-
-    /**
-     * 写真列表
-     */
-    var PhotoList = arrayListOf<String>()
-
-    /**
-     * 管理员列表
-     */
-    val ADMINISTRATOR: List<String>? = ArrayList()
-
-
+        /**
+         * 写真列表
+         */
+        var PhotoList = arrayListOf<String>()
+    }
 
 }

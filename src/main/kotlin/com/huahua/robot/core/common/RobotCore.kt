@@ -36,11 +36,8 @@ import javax.annotation.PostConstruct
     }
 
     private fun initGroupBootMap() {
-        val list = mapper?.selectList(null)
-        if (list != null) {
-            list.forEach {
-                BOOT_MAP[it.groupCode] = it.state
-            }
+        mapper.selectList(null)?.forEach {
+            BOOT_MAP[it.groupCode] = it.state
         }
 
     }

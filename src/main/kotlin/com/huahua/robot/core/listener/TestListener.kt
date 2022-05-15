@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component
  * @author wuyou
  */
 @Component
+@SuppressWarnings("unused")
 class TestListener {
     @RobotListen(desc = "测试私聊监听器")
     @Filter("1")

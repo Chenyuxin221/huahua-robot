@@ -33,6 +33,7 @@ import kotlin.time.Duration.Companion.minutes
 
 
 @Component
+@SuppressWarnings("all")
 class GroupListener {
     private val lotteryPrefix: List<String> = listOf("chou", "cou", "c", "抽", "操", "艹", "草")
     private val lotterySuffix: List<String> = listOf("jiang", "j", "奖", "wo", "w", "我")
@@ -126,8 +127,8 @@ class GroupListener {
     suspend fun GroupMessageEvent.getImage() {
         val path = "D:\\新建文件夹\\bot\\kt-huahua-robot\\src\\main\\resources\\image\\"
         for (message: Message.Element<*> in messageContent.messages) {
-            if (message.instanceOf(Image::class)) {
-                val imgResource: Resource = (message as Image<*>).resource()
+            if (message is Image) {
+                val imgResource: Resource = message.resource()
                 catCodeToMessage("")
                 val stream = imgResource.openStream()
                 File("${path}emm.jpg").writeBytes(withContext(Dispatchers.IO) {
@@ -220,7 +221,7 @@ class GroupListener {
             }
             author().mute((lucky.time * lucky.multiple).minutes)
             val message: Message = At(author().id) +
-                    "恭喜你抽到了${lucky.time}分钟".toText() +
+                    " 恭喜你抽到了${lucky.time}分钟".toText() +
                     if (lucky.multiple == 1) "".toText() else
                         ("，真是太棒了，你抽中的奖励翻了${lucky.multiple}倍，" +
                                 "变成了${lucky.time * lucky.multiple}分钟").toText()
@@ -293,8 +294,8 @@ class GroupListener {
         }
 
         for (message: Message.Element<*> in messageContent.messages) {
-            if (message.instanceOf(At::class)) {
-                val atId = ((message as At).target)
+            if (message is At) {
+                val atId = message.target
                 if (atId == bot.id) {
                     val reply = when (msg) {
                         "丢" -> "你给爷表演个怎么自己丢自己"
@@ -319,7 +320,7 @@ class GroupListener {
                     "跑" -> "http://api.klizi.cn/API/ce/pao.php?qq=$atId"
                     "赞" -> "http://api.klizi.cn/API/ce/zan.php?qq=$atId"
                     "牵" -> {
-                        if (atId == GlobalVariable().MASTER) {
+                        if (atId == GlobalVariable.MASTER) {
                             "http://api.klizi.cn/API/ce/qian.php?qq=$atId&qq1=${author().id}"
                         } else {
                             "http://api.klizi.cn/API/ce/qian.php?qq=${author().id}&qq1=$atId"

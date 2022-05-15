@@ -5,10 +5,12 @@ import com.huahua.robot.api.mapper.PhotoMapper
 import com.huahua.robot.utils.GlobalVariable
 import com.huahua.robot.utils.LoadLocalImg
 import kotlinx.coroutines.launch
+import love.forte.simbot.LoggerFactory
 import love.forte.simbot.OriginBotManager
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Configuration
+import kotlin.reflect.jvm.jvmName
 
 /**
  * ClassName: CmdRunner
@@ -20,12 +22,13 @@ import org.springframework.context.annotation.Configuration
 class CmdRunner : CommandLineRunner {
 
     @Autowired(required = false) private lateinit var mapper: PhotoMapper
+    val log = LoggerFactory.getLogger(CmdRunner::class.jvmName)
 
     override fun run(vararg args: String?) {
-        GlobalVariable().BOT = OriginBotManager.getBot(GlobalVariable().BOTID)
+        GlobalVariable.BOT = OriginBotManager.getBot(GlobalVariable.BOTID)
         initGlobalVariable()
-        GlobalVariable().BOT?.launch {
-            GlobalVariable().BOT?.friend(GlobalVariable().MASTER)?.send("我好了...")
+        GlobalVariable.BOT?.launch {
+            GlobalVariable.BOT?.friend(GlobalVariable.MASTER)?.send("我好了...")
         }
     }
 
@@ -33,18 +36,18 @@ class CmdRunner : CommandLineRunner {
      * 初始化全局变量
      */
     fun initGlobalVariable() {
-        GlobalVariable().PhotoList = loadImage()
+        GlobalVariable.PhotoList = loadImage()
     }
 
     fun loadImage(): ArrayList<String> {
         val localImgList: ArrayList<String> = LoadLocalImg().loadLocalImage()
-        val imgDBCount = mapper.selectCount(null)
+        var imgDBCount = mapper.selectCount(null)
 
         if (imgDBCount <= 0) {
             for (url: String in localImgList) {
                 mapper.insert(Photo(url = url))
             }
-            println("加载完成：\n本地图片数量：${localImgList.size}\n数据库图片数量：${mapper.selectCount(null)}")
+            log.info("本地图片数量：${localImgList.size}\t数据库图片数量：${mapper.selectCount(null)}")
             return localImgList
         }
         if (imgDBCount < localImgList.size.toLong()) {
@@ -54,7 +57,11 @@ class CmdRunner : CommandLineRunner {
                     mapper.insert(Photo(flag, localImgList[i]))
                 }
             }
-            println("加载完成：\n本地图片数量：${localImgList.size}\n数据库图片数量：${imgDBCount}")
+           log.info("本地图片数量：${localImgList.size}\t数据库图片数量：${imgDBCount}")
+        }
+        imgDBCount = mapper.selectCount(null)
+        if (imgDBCount<1){
+            mapper.insert(Photo(null,"http://c2cpicdw.qpic.cn/offpic_new/1849950046//1849950046-3989411300-97779161DF8D2A02845B89E2E7B40951/0?term=2")) //添加默认图片
         }
         return localImgList
     }
