@@ -14,7 +14,7 @@
 
 菜单地址：[3.x 功能菜单](https://www.yuque.com/qingsi-zwnmu/xyuvvi/wrbzgy)
 
-内置WebApi: [api文档](https://www.baidu.com)
+内置WebApi: [api文档](https://console-docs.apipost.cn/preview/2994e3757e2103c4/f6807ee950c44a1e?target_id=f67ce078-7aa4-44a7-bfcb-9605bde46489#fb8ff78b-4e48-49e8-9c5c-00e25d7476d6)
 
 ## 项目地址
 
