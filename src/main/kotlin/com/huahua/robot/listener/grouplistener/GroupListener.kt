@@ -28,6 +28,7 @@ import love.forte.simbot.resources.URLResource
 import org.springframework.stereotype.Component
 import java.io.File
 import java.net.URL
+import java.net.URLEncoder
 import java.util.*
 import kotlin.reflect.jvm.jvmName
 import kotlin.time.Duration.Companion.minutes
@@ -64,7 +65,7 @@ class GroupListener {
     @Filter(value = "来点好看的|来点好康的", matchType = MatchType.REGEX_CONTAINS)
     suspend fun GroupMessageEvent.setu() {
         val url = "http://localhost:8080/api/photo"
-        val body: String = HttpUtil().getBody(url)
+        val body: String = HttpUtil.getBody(url)
         val imgUrl = Gson().fromJson(body, Setu::class.java).url
         val image: Image<*> = bot.uploadImage(FileResource(File(imgUrl)))
         group().send(image)
@@ -99,8 +100,8 @@ class GroupListener {
     @Filter(value = "来点妹子", matchType = MatchType.TEXT_EQUALS)
     suspend fun GroupMessageEvent.showGirls() {
         val url = "https://api.iyk0.com/sjmn"
-        val response = HttpUtil().getResponse(url)
-        val dir = File("${System.getProperty("user.home")}\\.huahuabot\\image")
+        val response = HttpUtil.getResponse(url)
+        val dir = File("${GlobalVariable.botTemp}\\image")
         if (!dir.exists()){
             log.info("目录创建成功")
             dir.mkdirs()
@@ -169,15 +170,12 @@ class GroupListener {
         try {
             val key1 = "820458705ebe071883b3c2"
             val key2 = "198111555ec3242d2c6b42"
-            val params: MutableMap<String, String> = HashMap(8)
-            params["apikey"] = key1
-            params["size1200"] = "true"
-            params["r18"] = r18
-            var web: String = HttpUtil()["http://api.lolicon.app/setu/", params, null].response.toString()
+            var web: String = HttpUtil.get("http://api.lolicon.app/setu?apikey=${key1}&siez1200=true&r18=${r18
+            }").response
             setu = Gson().fromJson(web, SetuIcon::class.java)
             if (setu.code == 429) {
-                params["apikey"] = key2
-                web = HttpUtil()["http://api.lolicon.app/setu/", params, null].response.toString()
+                web = HttpUtil.get("http://api.lolicon.app/setu?apikey=${key1}&siez1200=true&r18=${r18
+                }").response
                 setu = Gson().fromJson(web, SetuIcon::class.java)
             }
         } catch (e: java.lang.Exception) {
@@ -211,9 +209,9 @@ class GroupListener {
                 break
             }
         }
-        if ((msg == "抽奖" || "cj" == msg) || num == 2) {
+        if ((msg == "抽奖" || "cj" == msg || msg == "奖励我") || num == 2) {
             if (group().member(this.bot.id)?.isOwner() == false && group().member(this.bot.id)?.isAdmin() == false){
-                group().send("哎呀，抽奖失败啦~权限不够呢")
+                group().send("哎呀，无法奖励你~权限不够呢")
                 return
             }
             if (author().isAdmin()) {
@@ -280,7 +278,7 @@ class GroupListener {
 
         if (msg == "看看腿") {
             val url = "http://ovooa.com/API/meizi/"
-            val tui = Gson().fromJson(HttpUtil().getBody(url), Tuizi::class.java).text
+            val tui = Gson().fromJson(HttpUtil.getBody(url), Tuizi::class.java).text
             group().send(bot.uploadImage(URLResource(URL(tui))))
             return
         }
@@ -327,16 +325,31 @@ class GroupListener {
                             "http://api.klizi.cn/API/ce/qian.php?qq=${author().id}&qq1=$atId"
                         }
                     }
-                    "谢谢", "听我说谢谢你" -> "http://api.klizi.cn/API/ce/xie.php?qq=$atId"
+                    "谢谢" -> "http://api.klizi.cn/API/ce/xie.php?qq=$atId"
                     "比心", "笔芯" -> "http://api.klizi.cn/API/ce/xin.php?qq=$atId"
                     "鄙视" -> "http://api.klizi.cn/API/ce/bishi.php?qq=$atId"
                     else -> ""
                 }
-                println("url = $url")
+                val dir = File("${GlobalVariable.botTemp}\\image")
+                if (!dir.exists()){
+                    dir.mkdirs()
+                }
                 if (url.isNotEmpty()) {
                     group().send(bot.uploadImage(URLResource(URL(url))))
                     return
                 }
+            }
+        }
+    }
+    @RobotListen(desc = "搜图", isBoot = true)
+    @Filter("搜图", matchType = MatchType.TEXT_CONTAINS)
+    suspend fun GroupMessageEvent.searchMap(){
+        val url = "https://yandex.com/images/search?family=yes&rpt=imageview&url=";
+        for (message:Message.Element<*> in messageContent.messages){
+            if (message is Image){
+                val imgUrl = message.resource().name
+                group().send(url+URLEncoder.encode(imgUrl))
+                return
             }
         }
     }
@@ -353,7 +366,7 @@ class GroupListener {
             return
         }
         val url = "http://ruohuan.xiaoapi.cn/API/other/xiaoai.php?msg=$msg"
-        val chat: Chat = Gson().fromJson(HttpUtil().getBody(url), Chat::class.java)
+        val chat: Chat = Gson().fromJson(HttpUtil.getBody(url), Chat::class.java)
         val reply = chat.text
         if (reply.isEmpty()) {
             group().send(At(author().id) + " ${msg}?".toText())

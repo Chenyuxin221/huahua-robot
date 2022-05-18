@@ -23,13 +23,13 @@ class PermissionUtil {
      * 2：   管理员
      * 3：   群主
      */
-    private fun getPermissionCode(member: GroupMember) = runBlocking t@{
+    private fun getPermissionCode(member: GroupMember) = runBlocking {
         if (member.isAdmin()) {
-            return@t Permission.ADMINISTRATORS
+            Permission.ADMINISTRATORS
         } else if (member.isOwner()) {
-            return@t Permission.OWNER
+            Permission.OWNER
         } else {
-            return@t Permission.MEMBER
+            Permission.MEMBER
         }
     }
 
@@ -42,13 +42,13 @@ class PermissionUtil {
      * 2：   管理员
      * 3：   群主
      */
-    private fun getPermissionCode(member: Member) = runBlocking t@{
+    private fun getPermissionCode(member: Member) = runBlocking {
         if (member.isAdmin()) {
-            return@t Permission.ADMINISTRATORS
+            Permission.ADMINISTRATORS
         } else if (member.isOwner()) {
-            return@t Permission.OWNER
+            Permission.OWNER
         } else {
-            return@t Permission.MEMBER
+            Permission.MEMBER
         }
     }
 

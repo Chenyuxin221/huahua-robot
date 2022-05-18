@@ -6,11 +6,11 @@ import love.forte.simbot.ID
 @SuppressWarnings("unused")
 class GlobalVariable {
 
-    companion object{
+    companion object {
         /**
          * 全局bot
          */
-        var BOT:Bot? = null
+        var BOT: Bot? = null
 
         /**
          * 机器人主人
@@ -26,6 +26,13 @@ class GlobalVariable {
          * 写真列表
          */
         var PhotoList = arrayListOf<String>()
+
+        var SKey = ""
+
+        /**
+         * 机器人文件缓存地址
+         */
+        val botTemp = "${System.getProperty("user.home")}\\.huahuabot\\"
     }
 
 }

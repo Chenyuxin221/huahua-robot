@@ -6,6 +6,7 @@ import com.huahua.robot.core.mapper.GroupBootStateMapper
 import love.forte.simbot.Bot
 import love.forte.simbot.OriginBotManager
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.ApplicationContext
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import java.io.File
@@ -33,6 +34,7 @@ import javax.annotation.PostConstruct
     @Synchronized
     private fun setApplicationContext() {
         robotCore = this
+        RobotCore.applicationContext = applicationContext
     }
 
     private fun initGroupBootMap() {
@@ -43,8 +45,7 @@ import javax.annotation.PostConstruct
     }
 
     companion object {
-
-        private val bot: Bot? = OriginBotManager.getAnyBot()
+        var applicationContext: ApplicationContext? = null
 
         /**
          * 项目名
@@ -60,6 +61,7 @@ import javax.annotation.PostConstruct
          * 临时路径
          */
         val TEMP_PATH: String = System.getProperty("java.io.tmpdir") + File.separator + PROJECT_NAME + File.separator
+
 
         /**
          * python路径
@@ -102,8 +104,8 @@ import javax.annotation.PostConstruct
         fun isBotAdministrator(accountCode: String): Boolean {
             return ADMINISTRATOR.contains(accountCode)
         }
-        fun getBot(): Bot?{
-            return bot
+        fun getBot(): Bot? {
+            return OriginBotManager.getAnyBot()
         }
     }
 }
