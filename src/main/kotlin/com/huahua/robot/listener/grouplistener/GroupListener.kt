@@ -37,7 +37,7 @@ import kotlin.time.Duration.Companion.minutes
 
 @Component
 @SuppressWarnings("all")
-class GroupListener {
+abstract class GroupListener {
     private val lotteryPrefix: List<String> = listOf("chou", "cou", "c", "抽", "操", "艹", "草")
     private val lotterySuffix: List<String> = listOf("jiang", "j", "奖", "wo", "w", "我")
     private val log = LoggerFactory.getLogger(GroupListener::class.jvmName)
@@ -377,30 +377,34 @@ class GroupListener {
             }
         }
 
-    @OptIn(ExperimentalSimbotApi::class)
-    @RobotListen(desc = "复读机", isBoot = true)
-    suspend fun GroupMessageEvent.repeat(session: ContinuousSessionContext){
-        val message = messageContent.messages
-        getMessage(session).let {
-            if (messageContent.messages == it){
-                group().send(messageContent.messages)
-            }
-        }
-    }
+    private var count:Int = 0;
 
-    @OptIn(ExperimentalSimbotApi::class)
-    private suspend fun GroupMessageEvent.getMessage(session: ContinuousSessionContext):Messages? =
-        getId(this)?.let { id ->
-            session.waitingForOnMessage(id = id.ID,100000L,this){event,_,provider ->
-                provider.push(event.messageContent.messages)
-            }
-        }
+//    @OptIn(ExperimentalSimbotApi::class)
+//    @RobotListen(desc = "复读机", isBoot = true)
+//    suspend fun GroupMessageEvent.repeat(session: ContinuousSessionContext){
+//        val message = messageContent.messages
+//        count+=1
+//        getMessage(session).let {
+//            if (messageContent.messages == it){
+//                group().send(messageContent.messages)
+//            }
+//        }
+//    }
+//
+//    @OptIn(ExperimentalSimbotApi::class)
+//    private suspend fun GroupMessageEvent.getMessage(session: ContinuousSessionContext):Messages? =
+//        getId(this)?.let { id ->
+//            session.waitingForOnMessage(id = id.ID,100000L,this){event,_,provider ->
+//                count+=1
+//                provider.push(event.messageContent.messages)
+//            }
+//        }
 
 
 
     private suspend fun getId(event: MessageEvent): String? {
         return when (event) {
-            is GroupMessageEvent -> "${event.group().id}${event.author().id}"
+            is GroupMessageEvent -> "${event.group().id}-${event.author().id}"
             is FriendMessageEvent -> "${event.friend().id}"
             else -> null
         }
