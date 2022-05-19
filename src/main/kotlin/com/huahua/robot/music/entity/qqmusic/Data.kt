@@ -1,4 +1,4 @@
-package com.huahua.robot.music.entity.music
+package com.huahua.robot.music.entity.qqmusic
 
 data class Data(
     val songid:String,

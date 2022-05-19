@@ -10,7 +10,6 @@ import com.huahua.robot.entity.Tuizi
 import com.huahua.robot.entity.setu.SetuIcon
 import com.huahua.robot.utils.GlobalVariable
 import com.huahua.robot.utils.HttpUtil
-import io.ktor.util.reflect.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -18,9 +17,11 @@ import kotlinx.coroutines.withContext
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.TargetFilter
 import love.forte.simboot.filter.MatchType
+import love.forte.simbot.ExperimentalSimbotApi
+import love.forte.simbot.ID
 import love.forte.simbot.LoggerFactory
 import love.forte.simbot.component.mirai.extra.catcode.catCodeToMessage
-import love.forte.simbot.event.GroupMessageEvent
+import love.forte.simbot.event.*
 import love.forte.simbot.message.*
 import love.forte.simbot.resources.FileResource
 import love.forte.simbot.resources.Resource
@@ -47,14 +48,13 @@ class GroupListener {
      */
     @RobotListen(isBoot = true, desc = "菜单服务")
     @Filter(".h|.help", matchType = MatchType.REGEX_MATCHES)
-    suspend fun GroupMessageEvent.menu(){
+    suspend fun GroupMessageEvent.menu() {
         val functionMenuUrl = "https://www.yuque.com/qingsi-zwnmu/xyuvvi/wrbzgy"
         val gitHubUrl = "https://github.com/Chenyuxin221/huahua-robot"
         val result = "功能菜单：${functionMenuUrl}\n项目地址：${gitHubUrl}"
         group().send(result)
 
     }
-
 
 
     /**
@@ -102,7 +102,7 @@ class GroupListener {
         val url = "https://api.iyk0.com/sjmn"
         val response = HttpUtil.getResponse(url)
         val dir = File("${GlobalVariable.botTemp}\\image")
-        if (!dir.exists()){
+        if (!dir.exists()) {
             log.info("目录创建成功")
             dir.mkdirs()
         }
@@ -170,11 +170,13 @@ class GroupListener {
         try {
             val key1 = "820458705ebe071883b3c2"
             val key2 = "198111555ec3242d2c6b42"
-            var web: String = HttpUtil.get("http://api.lolicon.app/setu?apikey=${key1}&siez1200=true&r18=${r18
+            var web: String = HttpUtil.get("http://api.lolicon.app/setu?apikey=${key1}&siez1200=true&r18=${
+                r18
             }").response
             setu = Gson().fromJson(web, SetuIcon::class.java)
             if (setu.code == 429) {
-                web = HttpUtil.get("http://api.lolicon.app/setu?apikey=${key1}&siez1200=true&r18=${r18
+                web = HttpUtil.get("http://api.lolicon.app/setu?apikey=${key1}&siez1200=true&r18=${
+                    r18
                 }").response
                 setu = Gson().fromJson(web, SetuIcon::class.java)
             }
@@ -210,7 +212,7 @@ class GroupListener {
             }
         }
         if ((msg == "抽奖" || "cj" == msg || msg == "奖励我") || num == 2) {
-            if (group().member(this.bot.id)?.isOwner() == false && group().member(this.bot.id)?.isAdmin() == false){
+            if (group().member(this.bot.id)?.isOwner() == false && group().member(this.bot.id)?.isAdmin() == false) {
                 group().send("哎呀，无法奖励你~权限不够呢")
                 return
             }
@@ -272,7 +274,9 @@ class GroupListener {
         val msg = messageContent.plainText.trim()
         val regex = Regex("^举牌.*").find(msg)?.value
         if (regex != null) {
-            group().send(bot.uploadImage(URLResource(URL("http://api.klizi.cn/API/tw/source.php?text=${regex.substring(2)}"))))
+            group().send(bot.uploadImage(URLResource(URL("https://api.klizi.cn/API/tw/source.php?text=${
+                regex.substring(2)
+            }"))))
             return
         }
 
@@ -314,24 +318,24 @@ class GroupListener {
                 }
 
                 val url = when (msg) {
-                    "丢" -> "http://api.klizi.cn/API/ce/diu.php?qq=$atId"
-                    "爬" -> "http://api.klizi.cn/API/ce/paa.php?qq=$atId"
-                    "跑" -> "http://api.klizi.cn/API/ce/pao.php?qq=$atId"
-                    "赞" -> "http://api.klizi.cn/API/ce/zan.php?qq=$atId"
+                    "丢" -> "https://api.klizi.cn/API/ce/diu.php?qq=$atId"
+                    "爬" -> "https://api.klizi.cn/API/ce/paa.php?qq=$atId"
+                    "跑" -> "https://api.klizi.cn/API/ce/pao.php?qq=$atId"
+                    "赞" -> "https://api.klizi.cn/API/ce/zan.php?qq=$atId"
                     "牵" -> {
                         if (atId == GlobalVariable.MASTER) {
-                            "http://api.klizi.cn/API/ce/qian.php?qq=$atId&qq1=${author().id}"
+                            "https://api.klizi.cn/API/ce/qian.php?qq=$atId&qq1=${author().id}"
                         } else {
-                            "http://api.klizi.cn/API/ce/qian.php?qq=${author().id}&qq1=$atId"
+                            "https://api.klizi.cn/API/ce/qian.php?qq=${author().id}&qq1=$atId"
                         }
                     }
-                    "谢谢" -> "http://api.klizi.cn/API/ce/xie.php?qq=$atId"
-                    "比心", "笔芯" -> "http://api.klizi.cn/API/ce/xin.php?qq=$atId"
-                    "鄙视" -> "http://api.klizi.cn/API/ce/bishi.php?qq=$atId"
+                    "谢谢" -> "https://api.klizi.cn/API/ce/xie.php?qq=$atId"
+                    "比心", "笔芯" -> "https://api.klizi.cn/API/ce/xin.php?qq=$atId"
+                    "鄙视" -> "https://api.klizi.cn/API/ce/bishi.php?qq=$atId"
                     else -> ""
                 }
                 val dir = File("${GlobalVariable.botTemp}\\image")
-                if (!dir.exists()){
+                if (!dir.exists()) {
                     dir.mkdirs()
                 }
                 if (url.isNotEmpty()) {
@@ -341,16 +345,64 @@ class GroupListener {
             }
         }
     }
+
+    @OptIn(ExperimentalSimbotApi::class)
     @RobotListen(desc = "搜图", isBoot = true)
     @Filter("搜图", matchType = MatchType.TEXT_CONTAINS)
-    suspend fun GroupMessageEvent.searchMap(){
-        val url = "https://yandex.com/images/search?family=yes&rpt=imageview&url=";
-        for (message:Message.Element<*> in messageContent.messages){
-            if (message is Image){
+    suspend fun GroupMessageEvent.searchMap(session: ContinuousSessionContext) {
+        val url = "https://yandex.com/images/search?family=yes&rpt=imageview&url="
+        for (message: Message.Element<*> in messageContent.messages) {
+            if (message is Image) {
                 val imgUrl = message.resource().name
-                group().send(url+URLEncoder.encode(imgUrl))
+                group().send(url + URLEncoder.encode(imgUrl))
                 return
             }
+        }
+        group().send("请发送图片...")
+        getPicture(session)?.let {
+            group().send(url + URLEncoder.encode(it))
+        }
+
+    }
+
+    @OptIn(ExperimentalSimbotApi::class)
+    private suspend fun GroupMessageEvent.getPicture(session: ContinuousSessionContext): String? =
+        getId(this)?.let { id ->
+            session.waitingForOnMessage(id = id.ID, timeout = 60000L, this) { event, _, provider ->
+                for (message: Message.Element<*> in event.messageContent.messages) {
+                    if (message is Image) {
+                        provider.push(message.resource().name)
+                    }
+                }
+            }
+        }
+
+    @OptIn(ExperimentalSimbotApi::class)
+    @RobotListen(desc = "复读机", isBoot = true)
+    suspend fun GroupMessageEvent.repeat(session: ContinuousSessionContext){
+        val message = messageContent.messages
+        getMessage(session).let {
+            if (messageContent.messages == it){
+                group().send(messageContent.messages)
+            }
+        }
+    }
+
+    @OptIn(ExperimentalSimbotApi::class)
+    private suspend fun GroupMessageEvent.getMessage(session: ContinuousSessionContext):Messages? =
+        getId(this)?.let { id ->
+            session.waitingForOnMessage(id = id.ID,100000L,this){event,_,provider ->
+                provider.push(event.messageContent.messages)
+            }
+        }
+
+
+
+    private suspend fun getId(event: MessageEvent): String? {
+        return when (event) {
+            is GroupMessageEvent -> "${event.group().id}${event.author().id}"
+            is FriendMessageEvent -> "${event.friend().id}"
+            else -> null
         }
     }
 

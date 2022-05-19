@@ -2,8 +2,9 @@ package com.huahua.robot.utils
 
 import com.huahua.robot.core.common.RobotCore
 import com.huahua.robot.music.MusicInfo
-import com.huahua.robot.music.entity.music.Data
-import com.huahua.robot.music.entity.music.Music
+import com.huahua.robot.music.entity.neteasemusic.NeteaseMusic
+import com.huahua.robot.music.entity.qqmusic.Data
+import com.huahua.robot.music.entity.qqmusic.QQMusic
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
@@ -79,10 +80,10 @@ class MessageUtil {
                 "[分享]${musicInfo.title}"
             )
         }
-        fun getMusicShare(music:Music,type:MusicKind):Message{
+        fun getMusicShare(music:QQMusic, type:MusicKind):Message{
             return MiraiMusicShare(
                 type,
-                music.data.song+"-"+music.data.singer,
+                music.data.song,
                 music.data.singer,
                 music.data.url,
                 music.data.picture,
@@ -93,7 +94,7 @@ class MessageUtil {
         fun getMusicShare(music:Data,type:MusicKind):Message{
             return MiraiMusicShare(
                 type,
-                music.song+"-"+music.singer,
+                music.song,
                 music.singer,
                 music.url,
                 music.picture,
@@ -101,5 +102,16 @@ class MessageUtil {
                 "[分享]${music.song+"-"+music.singer}"
             )
         }
+
+        fun getMusicShare(music:NeteaseMusic):Message = MiraiMusicShare(
+                MusicKind.NeteaseCloudMusic,
+            music.song,
+            music.singer,
+            "https://music.163.com/#/song?id=${music.url.split("=")[1]}",
+            music.img,
+            music.url,
+            "[分享]${music.song}-${music.singer}"
+            )
+
     }
 }
