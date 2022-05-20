@@ -37,7 +37,7 @@ import kotlin.time.Duration.Companion.minutes
 
 @Component
 @SuppressWarnings("all")
-abstract class GroupListener {
+class GroupListener {
     private val lotteryPrefix: List<String> = listOf("chou", "cou", "c", "抽", "操", "艹", "草")
     private val lotterySuffix: List<String> = listOf("jiang", "j", "奖", "wo", "w", "我")
     private val log = LoggerFactory.getLogger(GroupListener::class.jvmName)
@@ -53,7 +53,6 @@ abstract class GroupListener {
         val gitHubUrl = "https://github.com/Chenyuxin221/huahua-robot"
         val result = "功能菜单：${functionMenuUrl}\n项目地址：${gitHubUrl}"
         group().send(result)
-
     }
 
 
@@ -351,7 +350,8 @@ abstract class GroupListener {
     @Filter("搜图", matchType = MatchType.TEXT_CONTAINS)
     suspend fun GroupMessageEvent.searchMap(session: ContinuousSessionContext) {
         val url = "https://yandex.com/images/search?family=yes&rpt=imageview&url="
-        for (message: Message.Element<*> in messageContent.messages) {
+        println(1111111111)
+        for (message in messageContent.messages) {
             if (message is Image) {
                 val imgUrl = message.resource().name
                 group().send(url + URLEncoder.encode(imgUrl))
@@ -369,37 +369,13 @@ abstract class GroupListener {
     private suspend fun GroupMessageEvent.getPicture(session: ContinuousSessionContext): String? =
         getId(this)?.let { id ->
             session.waitingForOnMessage(id = id.ID, timeout = 60000L, this) { event, _, provider ->
-                for (message: Message.Element<*> in event.messageContent.messages) {
+                for (message in event.messageContent.messages) {
                     if (message is Image) {
                         provider.push(message.resource().name)
                     }
                 }
             }
         }
-
-    private var count:Int = 0;
-
-//    @OptIn(ExperimentalSimbotApi::class)
-//    @RobotListen(desc = "复读机", isBoot = true)
-//    suspend fun GroupMessageEvent.repeat(session: ContinuousSessionContext){
-//        val message = messageContent.messages
-//        count+=1
-//        getMessage(session).let {
-//            if (messageContent.messages == it){
-//                group().send(messageContent.messages)
-//            }
-//        }
-//    }
-//
-//    @OptIn(ExperimentalSimbotApi::class)
-//    private suspend fun GroupMessageEvent.getMessage(session: ContinuousSessionContext):Messages? =
-//        getId(this)?.let { id ->
-//            session.waitingForOnMessage(id = id.ID,100000L,this){event,_,provider ->
-//                count+=1
-//                provider.push(event.messageContent.messages)
-//            }
-//        }
-
 
 
     private suspend fun getId(event: MessageEvent): String? {
