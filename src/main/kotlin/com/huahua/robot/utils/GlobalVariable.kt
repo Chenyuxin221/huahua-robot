@@ -33,6 +33,8 @@ class GlobalVariable {
          * 机器人文件缓存地址
          */
         val botTemp = "${System.getProperty("user.home")}\\.huahuabot\\"
+
+        var MusicJump = true
     }
 
 }

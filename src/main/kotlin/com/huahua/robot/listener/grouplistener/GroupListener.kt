@@ -10,6 +10,8 @@ import com.huahua.robot.entity.Tuizi
 import com.huahua.robot.entity.setu.SetuIcon
 import com.huahua.robot.utils.GlobalVariable
 import com.huahua.robot.utils.HttpUtil
+import com.huahua.robot.utils.Permission
+import com.huahua.robot.utils.PermissionUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -67,7 +69,16 @@ class GroupListener {
         val body: String = HttpUtil.getBody(url)
         val imgUrl = Gson().fromJson(body, Setu::class.java).url
         val image: Image<*> = bot.uploadImage(FileResource(File(imgUrl)))
-        group().send(image)
+        if (PermissionUtil.botCompareToAuthor(this)){
+            author().mute((5).minutes)
+        }
+        val flag = group().send(image)
+        bot.launch {
+            if (flag.isSuccess){
+                delay(6000)
+                flag.deleteIfSupport()
+            }
+        }
     }
 
     /**

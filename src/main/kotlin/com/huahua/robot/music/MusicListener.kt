@@ -35,10 +35,10 @@ import kotlin.reflect.jvm.jvmName
 class MusicListener {
 
     private val log = LoggerFactory.getLogger(MusicListener::class.jvmName)
-    private val listTip = "---------------------"+
-                          "请输入序号or播放+序号进行播放\n"+
-                          "或者输入下载+序号获取下载链接\n"+
-                          "---------------------\n"
+    private val listTip = "---------------------\n" +
+            "请输入序号or播放+序号进行播放\n" +
+            "或者输入下载+序号获取下载链接\n" +
+            "---------------------\n"
     private val downloadTip = "下载地址（复制到浏览器下载）：\n"
 
     @RobotListen(desc = "登录", isBoot = true, permission = RobotPermission.ADMINISTRATOR)
@@ -50,21 +50,65 @@ class MusicListener {
     @OptIn(ExperimentalSimbotApi::class)
     @RobotListen(desc = "点歌", isBoot = true)
     @Filter("点歌{{name}}", matchType = MatchType.REGEX_MATCHES)
-    suspend fun GroupMessageEvent.music(@FilterValue("name") name: String, session: ContinuousSessionContext) {
+    suspend fun GroupMessageEvent.music(
+        @FilterValue("name") name: String,
+        session: ContinuousSessionContext,
+    ){
         if (GlobalVariable.SKey.isEmpty()) {
             group().send("正在登录中~请稍后")
             userLogin()
         }
-        val qqMusicState = qqMusic(true, name, this, session) //是否有匹配歌曲
+        val qqMusicState = qqMusic(GlobalVariable.MusicJump, name, this, session) //是否有匹配歌曲
         if (!qqMusicState) {
             group().send("QQ音乐未搜索到结果，正在为你跳转至网易云")
             neteaseMusic(name, this, session)
         }
+    }
+
+    @OptIn(ExperimentalSimbotApi::class)
+    @RobotListen(desc = "指定点歌", isBoot = true)
+    @Filter("{{channel}}点歌{{name}}", matchType = MatchType.REGEX_MATCHES)
+    suspend fun GroupMessageEvent.music(
+        @FilterValue("channel") channel: String,
+        @FilterValue("name") name: String,
+        session: ContinuousSessionContext,
+    ) {
+        //判断channel是否为空
+        if(channel.isNotEmpty()){
+            //指定点歌
+            when(channel){
+                "网易云","网抑云","网易" -> neteaseMusic(name,this,session)
+                "QQ","qq","qq音乐","QQ音乐" -> {
+                    if (GlobalVariable.SKey.isEmpty()) {
+                        group().send("正在登录中~请稍后")
+                        userLogin()
+                    }
+                    qqMusic(false, name, this, session)
+                }
+                else -> return
+            }
+        }
 
     }
 
-
-
+    /**
+     * 是否需要跳转
+     * @receiver GroupMessageEvent   群聊事件
+     * @param state String   状态
+     */
+    @RobotListen(desc = "是否需要跳转", isBoot = true)
+    @Filter("{{state}}自动跳转", matchType = MatchType.REGEX_MATCHES)
+    suspend fun GroupMessageEvent.setMusic(@FilterValue("state") state: String) {
+        if (state == "开启" || state == "设置") {
+            GlobalVariable.MusicJump = true
+            group().send("自动跳转已开启")
+            return
+        }
+        if (state == "关闭" || state == "取消") {
+            GlobalVariable.MusicJump = false
+            group().send("自动跳转已关闭")
+        }
+    }
 
 
     /**
@@ -149,6 +193,7 @@ class MusicListener {
         }
         return true
     }
+
 
     @OptIn(ExperimentalSimbotApi::class)
     private suspend fun GroupMessageEvent.getNum(session: ContinuousSessionContext): State? =
