@@ -39,7 +39,7 @@ class MusicListener {
                           "请输入序号or播放+序号进行播放\n"+
                           "或者输入下载+序号获取下载链接\n"+
                           "---------------------\n"
-    private val dowlondTip = "下载地址（复制到浏览器下载）：\n"
+    private val downloadTip = "下载地址（复制到浏览器下载）：\n"
 
     @RobotListen(desc = "登录", isBoot = true, permission = RobotPermission.ADMINISTRATOR)
     @Filter("登录")
@@ -62,6 +62,9 @@ class MusicListener {
         }
 
     }
+
+
+
 
 
     /**
@@ -104,7 +107,7 @@ class MusicListener {
                     val share = MessageUtil.getMusicShare(music, MusicKind.QQMusic)
                     group.send(share)
                 }
-                0 -> group.send("${dowlondTip}${music.music}")
+                0 -> group.send("${downloadTip}${music.music}")
                 else -> group.send("哎呀，出错啦")
             }
         }
@@ -139,7 +142,7 @@ class MusicListener {
                     val share = MessageUtil.getMusicShare(music)
                     group.send(share)
                 }
-                0 -> group.send("${dowlondTip}$music.url")
+                0 -> group.send("${downloadTip}$music.url")
                 else -> group.send("哎呀，出错啦~")
             }
 
