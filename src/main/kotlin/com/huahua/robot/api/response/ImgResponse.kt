@@ -8,4 +8,5 @@ import lombok.NoArgsConstructor
 data class ImgResponse(
     val code: Int,
     val url: String?
+
 )
