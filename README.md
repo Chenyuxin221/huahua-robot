@@ -87,8 +87,74 @@ spring.datasource.password=用户密码
 
 ## 项目结构
 
-<img src="./src/main/resources/images/path1.png" alt="图片1">
-<img src="./src/main/resources/images/path2.png" alt="图片2">
+```text
+├─main
+│  ├─kotlin
+│  │  └─com
+│  │      └─huahua
+│  │          └─robot
+│  │              │  HuahuaRobotApplication.kt			  ---启动文件
+│  │              │  
+│  │              ├─api									---API目录
+│  │              │  ├─controller						 ---控制层
+│  │              │  │      
+│  │              │  ├─entity							 ---实体类
+│  │              │  │      
+│  │              │  ├─enums							 ---暂时没用	枚举
+│  │              │  │      
+│  │              │  ├─mapper							 ---mapper层
+│  │              │  │      
+│  │              │  └─response							 ---返回响应类
+│  │              │          
+│  │              ├─core								--- 核心
+│  │              │  ├─annotation						 ---注解
+│  │              │  │      RobotListen.kt				  ---监听注解
+│  │              │  │      
+│  │              │  ├─common							 ---一些常用的类 例如AOP
+│  │              │  │      
+│  │              │  ├─entity							 ---实体类
+│  │              │  │      
+│  │              │  ├─enums							 ---枚举
+│  │              │  │      
+│  │              │  ├─listener							  ---核心里的一些监听 做一些开关机操作
+│  │              │  │      
+│  │              │  ├─mapper							  ---数据库操作
+│  │              │  │      
+│  │              │  └─util								  ---工具类
+│  │              │          PermissionUtil.kt
+│  │              │          
+│  │              ├─entity								  ---实体类
+│  │              │          
+│  │              ├─exception							  ---异常
+│  │              │      
+│  │              ├─listener
+│  │              │  ├─grouplistener					   ---群监听
+│  │              │  │      
+│  │              │  └─privatelistener                       ---私聊监听
+│  │              │          
+│  │              ├─music								  --点歌
+│  │              │  │  
+│  │              │  ├─entity							   ---歌曲实体类
+│  │              │  │          
+│  │              │  └─util								   ---工具类
+│  │              │          
+│  │              └─utils								   ---通用工具类
+│  │                      
+│  └─resources											  ---资源目录
+│      │  application.properties						    ---Springboot配置文件
+│      │  
+│      ├─simbot-bots									   ---机器人目录 每个机器人都是单独的.bot文件
+│      │      
+│      ├─sql											  ---数据表
+│      │      group_boot_state.sql
+│      │      images_url.sql
+│      │      message.sql
+│      │      
+│      ├─static
+│      └─templates
+```
+
+
 
 ## 注意事项
 - ### 无法登录提示环境异常 循环验证登不上去
