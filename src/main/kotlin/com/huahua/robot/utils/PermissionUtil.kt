@@ -24,107 +24,101 @@ class PermissionUtil {
      * 3：   群主
      */
     private fun getPermissionCode(member: GroupMember) = runBlocking {
-        if (member.isAdmin()) {
-            Permission.ADMINISTRATORS
-        } else if (member.isOwner()) {
-            Permission.OWNER
-        } else {
-            Permission.MEMBER
+        if (member.isAdmin()) { //判断是否是管理员
+            Permission.ADMINISTRATORS   //如果是管理员，则返回管理员权限码
+        } else if (member.isOwner()) {  //判断是否是群主
+            Permission.OWNER        //如果是群主，则返回群主权限码
+        } else {                      //如果不是管理员，也不是群主，则返回普通成员权限码
+            Permission.MEMBER    //如果不是管理员，也不是群主，则返回普通成员权限码
         }
     }
 
     /**
-     * 获取成员权限码
-     * @param member GroupMember?   群成员
-     * @return Int
-     * -1：  member为空
-     * 1；   成员
-     * 2：   管理员
-     * 3：   群主
+     * 获取成员权限
+     * @param member Member 群成员
+     * @return Permission   权限
      */
     private fun getPermissionCode(member: Member) = runBlocking {
-        if (member.isAdmin()) {
-            Permission.ADMINISTRATORS
-        } else if (member.isOwner()) {
-            Permission.OWNER
-        } else {
-            Permission.MEMBER
+        if (member.isAdmin()) { //判断是否为管理员
+            Permission.ADMINISTRATORS   //如果是管理员，则返回管理员权限
+        } else if (member.isOwner()) {  //判断是否为群主
+            Permission.OWNER       //如果是群主，则返回群主权限
+        } else {                      //如果不是管理员，也不是群主，则返回普通成员权限
+            Permission.MEMBER    //如果不是管理员，也不是群主，则返回普通成员权限
         }
     }
 
 
-    companion object {
+    companion object {  //静态内部类
 
         /**
-         * 获取群Bot的权限
-         * @param event GroupMessageEvent 群事件
-         * @return Int 权限码
-         * 1：成员
-         * 2：管理员
-         * 3：群主
+         * 获取bot在群中的权限
+         * @receiver GroupMessageEvent  群消息事件
+         * @return Permission   权限
          */
-        fun botPermission(event: GroupMessageEvent) =
-            runBlocking { PermissionUtil().getPermissionCode(event.group().member(event.bot.id)!!) }
+        fun GroupMessageEvent.botPermission() =
+            runBlocking {
+                PermissionUtil().getPermissionCode(
+                    this@botPermission.group().member(this@botPermission.bot.id)!!  //获取群Bot的权限
+                )
+            }
 
         /**
-         * 获取发言人的权限
-         * @param event GroupMessageEvent 群事件
-         * @return Int 权限码
-         * 1：成员
-         * 2：管理员
-         * 3：群主
+         * 获取该成员在群中的权限
+         * @receiver GroupMessageEvent  群消息事件
+         * @return Permission   权限
          */
-        fun authorPermission(event: GroupMessageEvent) =
-            runBlocking { PermissionUtil().getPermissionCode(event.author()) }
+        fun GroupMessageEvent.authorPermission() =
+            runBlocking { PermissionUtil().getPermissionCode(this@authorPermission.author()) }  //获取成员的权限
 
         /**
-         * 获取指定群成员的权限
-         * @param member GroupMember? 群成员
-         * @return Int 权限码
-         * 1：成员
-         * 2：管理员
-         * 3：群主
-         */
-        fun memberPermission(member: GroupMember) = runBlocking { PermissionUtil().getPermissionCode(member) }
-
-        /**
-         * 获取指定群成员的权限
-         * @param member GroupMember? 群成员
-         * @return Int 权限码
-         * 1：成员
-         * 2：管理员
-         * 3：群主
-         */
-        fun memberPermission(member: Member) = runBlocking { PermissionUtil().getPermissionCode(member) }
-
-        /**
-         * 比较bot和发言人的权限
-         * @param event GroupMessageEvent 群事件
-         * @return Boolean  bot权限大于发言人则返回true，否则返回false
-         */
-        fun botCompareToAuthor(event: GroupMessageEvent) =
-            runBlocking { botPermission(event) > authorPermission(event) }
-
-        /**
-         * 比较bot和成员的权限
-         * @param event GroupMessageEvent   群事件
+         * 获取群成员在群中的权限
          * @param member GroupMember    群成员
-         * @return Boolean  bot权限大于成员则返回true，否则返回false
+         * @return Permission   权限
          */
-        fun botCompareToMember(event: GroupMessageEvent, member: GroupMember) =
-            runBlocking { botPermission(event) > memberPermission(member) }
+        fun memberPermission(member: GroupMember) =
+            runBlocking { PermissionUtil().getPermissionCode(member) }  //获取成员的权限
 
         /**
-         * 比较bot和成员的权限
-         * @param event GroupMessageEvent   群事件
-         * @param member Member    群成员
-         * @return Boolean  bot权限大于成员则返回true，否则返回false
+         * 获取成员在群中的权限
+         * @param member Member   群成员
+         * @return Permission   权限
          */
-        fun botCompareToMember(event: GroupMessageEvent, member: Member) =
-            runBlocking { botPermission(event) > memberPermission(member) }
+        fun memberPermission(member: Member) = runBlocking { PermissionUtil().getPermissionCode(member) }   //获取成员的权限
+
+        /**
+         * 比较bot和该成员的权限
+         * @receiver GroupMessageEvent  群消息事件
+         * @return Boolean  是否有权限
+         */
+        fun GroupMessageEvent.botCompareToAuthor() =
+            runBlocking { botPermission() > authorPermission() }   //比较bot和该成员的权限
+
+        /**
+         * 比较bot和群成员的权限
+         * @receiver GroupMessageEvent  群消息事件
+         * @param member GroupMember    群成员
+         * @return Boolean  是否有权限
+         */
+        fun GroupMessageEvent.botCompareToMember(member: GroupMember) =
+            runBlocking { botPermission() > memberPermission(member) }  //比较bot和群成员的权限
+
+        /**
+         *  比较bot和群成员的权限
+         * @receiver GroupMessageEvent  群消息事件
+         * @param member Member  群成员
+         * @return Boolean  是否有权限
+         */
+        fun GroupMessageEvent.botCompareToMember(member: Member) =
+            runBlocking { botPermission() > memberPermission(member) }  //比较bot和群成员的权限
     }
 }
 
-enum class Permission(level: Int) {
-    MEMBER(1), ADMINISTRATORS(2), OWNER(3)
+/**
+ * 权限枚举
+ */
+enum class Permission(level: Int) { //权限枚举
+    MEMBER(1),  //普通成员
+    ADMINISTRATORS(2),  //管理员
+    OWNER(3);   //群主
 }

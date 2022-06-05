@@ -2,8 +2,8 @@ package com.huahua.robot.api.controller
 
 
 import com.google.gson.Gson
-import com.huahua.robot.api.Response.ImgResponse
-import com.huahua.robot.api.Response.MsgResponse
+import com.huahua.robot.api.response.ImgResponse
+import com.huahua.robot.api.response.MsgResponse
 import com.huahua.robot.api.mapper.PhotoMapper
 import love.forte.simbot.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired

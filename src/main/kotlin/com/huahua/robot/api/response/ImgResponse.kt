@@ -1,4 +1,4 @@
-package com.huahua.robot.api.Response
+package com.huahua.robot.api.response
 
 import lombok.AllArgsConstructor
 import lombok.NoArgsConstructor

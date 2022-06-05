@@ -1,10 +1,11 @@
 package com.huahua.robot.api.controller
 
 import com.google.gson.Gson
-import com.huahua.robot.api.Response.MessageResponse
-import com.huahua.robot.api.Response.MsgResponse
+
 import com.huahua.robot.api.entity.Message
 import com.huahua.robot.api.mapper.MessageMapper
+import com.huahua.robot.api.response.MessageResponse
+import com.huahua.robot.api.response.MsgResponse
 import love.forte.simbot.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
@@ -23,6 +24,11 @@ class MessageController {
     @Autowired lateinit var messageMapper: MessageMapper
     private val log = LoggerFactory.getLogger(MessageController::class.jvmName)
 
+    /**
+     *
+     * @param body Message  需要上传的消息对象
+     * @return String   json格式的字符串
+     */
     @PostMapping("/uploadMessage")
     fun uploadMessage(@RequestBody body: Message): String {
         val result:Int = messageMapper.insert(body)
