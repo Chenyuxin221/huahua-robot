@@ -87,8 +87,8 @@ spring.datasource.password=用户密码
 
 ## 项目结构
 
-![图片1](./src/main/resources/images/path1.png))       
-![图片2](./src/main/resources/images/path2.png)
+<img src="./src/main/resources/images/path1.png" alt="图片1">
+<img src="./src/main/resources/images/path2.png" alt="图片2">
 
 ## 注意事项
 - ### 无法登录提示环境异常 循环验证登不上去
