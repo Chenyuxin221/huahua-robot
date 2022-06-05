@@ -87,8 +87,8 @@ spring.datasource.password=用户密码
 
 ## 项目结构
 
-![image-20220605201710945](C:\Users\18499\AppData\Roaming\Typora\typora-user-images\image-20220605201710945.png)       
-![image-20220605201737047](C:\Users\18499\AppData\Roaming\Typora\typora-user-images\image-20220605201737047.png)
+![图片1](./src/main/resources/images/path1.png))       
+![图片2](./src/main/resources/images/path2.png)
 
 ## 注意事项
 - ### 无法登录提示环境异常 循环验证登不上去
