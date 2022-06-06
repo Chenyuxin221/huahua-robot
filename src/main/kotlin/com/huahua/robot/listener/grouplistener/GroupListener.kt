@@ -231,171 +231,172 @@ class GroupListener {
                 }
             }
     }
-}
 
 
-/**
- * 幸运时间
- * @param timeFrame Int 最大时间
- * @return LuckyTime
- */
-private fun lucky(timeFrame: Int): LuckyTime {
-    val time = Random().nextInt(timeFrame) + 1  // 获取随机数
-    val multiple: Int = when (Random().nextInt(100)) {
-        11 -> 2
-        22 -> 3
-        33 -> 4
-        44 -> 5
-        55 -> 6
-        66 -> 7
-        77 -> 8
-        88 -> 9
-        99 -> 10
-        else -> 1
-    }   // 获取抽奖倍数
-    return LuckyTime(time, multiple)    // 返回抽奖结果
-}
+    /**
+     * 幸运时间
+     * @param timeFrame Int 最大时间
+     * @return LuckyTime
+     */
+    private fun lucky(timeFrame: Int): LuckyTime {
+        val time = Random().nextInt(timeFrame) + 1  // 获取随机数
+        val multiple: Int = when (Random().nextInt(100)) {
+            11 -> 2
+            22 -> 3
+            33 -> 4
+            44 -> 5
+            55 -> 6
+            66 -> 7
+            77 -> 8
+            88 -> 9
+            99 -> 10
+            else -> 1
+        }   // 获取抽奖倍数
+        return LuckyTime(time, multiple)    // 返回抽奖结果
+    }
 
-/**
- * 娱乐区
- */
+    /**
+     * 娱乐区
+     */
 
-/**
- * 1.at+丢
- * 2.at+爬
- * 3.at+跑
- * 4.at+赞
- * 5.at+谢谢
- * 6.at+比心
- * 7.看看腿
- * 8.举牌+文本
- * @receiver GroupMessageEvent
- * @see At
- */
-@RobotListen(isBoot = true, desc = "作图服务")
-suspend fun GroupMessageEvent.fakePictures() {
-    val msg = messageContent.plainText.trim()   // 获取消息内容
-    val regex = Regex("^举牌.*").find(msg)?.value // 获取举牌内容
-    if (regex != null) {    // 判断举牌内容是否为空
-        group().send(   // 发送消息
-            bot.uploadImage(    // 上传图片
-                URLResource(    // 获取图片资源
-                    URL(    // 获取图片链接
-                        "https://api.klizi.cn/API/tw/source.php?text=${
-                            regex.substring(2)
-                        }"  // 拼接图片链接
+    /**
+     * 1.at+丢
+     * 2.at+爬
+     * 3.at+跑
+     * 4.at+赞
+     * 5.at+谢谢
+     * 6.at+比心
+     * 7.看看腿
+     * 8.举牌+文本
+     * @receiver GroupMessageEvent
+     * @see At
+     */
+    @RobotListen(isBoot = true, desc = "作图服务")
+    suspend fun GroupMessageEvent.fakePictures() {
+        val msg = messageContent.plainText.trim()   // 获取消息内容
+        val regex = Regex("^举牌.*").find(msg)?.value // 获取举牌内容
+        if (regex != null) {    // 判断举牌内容是否为空
+            group().send(   // 发送消息
+                bot.uploadImage(    // 上传图片
+                    URLResource(    // 获取图片资源
+                        URL(    // 获取图片链接
+                            "https://api.klizi.cn/API/tw/source.php?text=${
+                                regex.substring(2)
+                            }"  // 拼接图片链接
+                        )
                     )
                 )
             )
-        )
-        return  // 跳出方法
-    }
-
-    if (msg == "看看腿") { // 判断消息内容是否为看看腿
-        val url = "http://ovooa.com/API/meizi/"
-        val tui = HttpUtil.getJsonClassFromUrl(url, Tuizi::class.java).text // 获取腿实体类
-        group().send(bot.uploadImage(URLResource(URL(tui))))    // 发送图片
-        return  // 跳出方法
-    }
-
-    val r = Regex("^[\u4e00-\u9fa5].*$").find(msg)?.value   // 获取消息内容中的中文
-    if (r != null) {    // 判断消息内容不为空
-        if (r.length in 3..4 && msg.contains("人")) {    // 判断消息内容长度是否在3到4个字符且包含人
-            val chars = msg.toCharArray().joinToString("  ")    // 将消息内容转换成字符数组并使用空格分隔
-            group().send(chars)   // 发送消息
             return  // 跳出方法
         }
-    }
 
-    for (message in messageContent.messages) {  // 遍历消息内容
-        if (message is At) {    // 判断消息内容是否为at消息
-            val atId = message.target   // 获取at的id
-            if (atId == bot.id) {   // 判断at的id是否为bot的id
-                val reply = when (msg) {
-                    "丢" -> "你给爷表演个怎么自己丢自己"
-                    "爬" -> "我不会，快教我！"
-                    "跑" -> "芜湖！"
-                    "谢谢" -> "不用谢"
-                    "笔芯", "比心" -> "爱你哟~"
-                    "牵" -> "嘤嘤嘤，牵手手"
-                    "鄙视" -> "嘤嘤嘤"
-                    else -> ""
-                }   // 获取回复内容
-                if (reply.isNotEmpty()) {   // 判断回复内容是否为空
-                    group().send(At(author().id) + (" $reply").toText())    // 发送回复
-                    return  // 跳出方法
-                }
+        if (msg == "看看腿") { // 判断消息内容是否为看看腿
+            val url = "http://ovooa.com/API/meizi/"
+            val tui = HttpUtil.getJsonClassFromUrl(url, Tuizi::class.java).text // 获取腿实体类
+            group().send(bot.uploadImage(URLResource(URL(tui))))    // 发送图片
+            return  // 跳出方法
+        }
+
+        val r = Regex("^[\u4e00-\u9fa5].*$").find(msg)?.value   // 获取消息内容中的中文
+        println(r)
+        if (r != null) {    // 判断消息内容不为空
+            if (r.length in 3..4 && msg.contains("人")) {    // 判断消息内容长度是否在3到4个字符且包含人
+                val chars = msg.toCharArray().joinToString("  ")    // 将消息内容转换成字符数组并使用空格分隔
+                group().send(chars)   // 发送消息
                 return  // 跳出方法
             }
+        }
 
-            val url = when (msg) {  // 获取图片链接
-                "丢" -> "https://api.klizi.cn/API/ce/diu.php?qq=$atId"   // 丢图片链接
-                "爬" -> "https://api.klizi.cn/API/ce/paa.php?qq=$atId"   // 爬图片链接
-                "跑" -> "https://api.klizi.cn/API/ce/pao.php?qq=$atId"   // 跑图片链接
-                "赞" -> "https://api.klizi.cn/API/ce/zan.php?qq=$atId"   // 赞图片链接
-                "牵" -> {
-                    if (atId == GlobalVariable.MASTER) {    // 判断at的id是否为管理员id
-                        "https://api.klizi.cn/API/ce/qian.php?qq=${atId}&qq1=${author().id}"    // id调换为at的id和此人id
-                    } else {
-                        "https://api.klizi.cn/API/ce/qian.php?qq=${author().id}&qq1=$atId"      // id调换为此人id和at的id
+        for (message in messageContent.messages) {  // 遍历消息内容
+            if (message is At) {    // 判断消息内容是否为at消息
+                val atId = message.target   // 获取at的id
+                if (atId == bot.id) {   // 判断at的id是否为bot的id
+                    val reply = when (msg) {
+                        "丢" -> "你给爷表演个怎么自己丢自己"
+                        "爬" -> "我不会，快教我！"
+                        "跑" -> "芜湖！"
+                        "谢谢" -> "不用谢"
+                        "笔芯", "比心" -> "爱你哟~"
+                        "牵" -> "嘤嘤嘤，牵手手"
+                        "鄙视" -> "嘤嘤嘤"
+                        else -> ""
+                    }   // 获取回复内容
+                    if (reply.isNotEmpty()) {   // 判断回复内容是否为空
+                        group().send(At(author().id) + (" $reply").toText())    // 发送回复
+                        return  // 跳出方法
                     }
-                }   // 牵图片链接
-                "谢谢" -> "https://api.klizi.cn/API/ce/xie.php?qq=$atId"  // 谢图片链接
-                "比心", "笔芯" -> "https://api.klizi.cn/API/ce/xin.php?qq=$atId"    // 比心图片链接
-                "鄙视" -> "https://api.klizi.cn/API/ce/bishi.php?qq=$atId"    // 鄙视图片链接
-                else -> ""  // 空图片链接
-            }
-            val dir = File("${GlobalVariable.botTemp}\\image")  // 获取图片存放目录
-            if (!dir.exists()) {    // 判断图片存放目录是否存在
-                dir.mkdirs()    // 创建图片存放目录
-            }
-            if (url.isNotEmpty()) {   // 判断图片链接是否为空
-                group().send(bot.uploadImage(URLResource(URL(url))))    // 发送图片
+                    return  // 跳出方法
+                }
+
+                val url = when (msg) {  // 获取图片链接
+                    "丢" -> "https://api.klizi.cn/API/ce/diu.php?qq=$atId"   // 丢图片链接
+                    "爬" -> "https://api.klizi.cn/API/ce/paa.php?qq=$atId"   // 爬图片链接
+                    "跑" -> "https://api.klizi.cn/API/ce/pao.php?qq=$atId"   // 跑图片链接
+                    "赞" -> "https://api.klizi.cn/API/ce/zan.php?qq=$atId"   // 赞图片链接
+                    "牵" -> {
+                        if (atId == GlobalVariable.MASTER) {    // 判断at的id是否为管理员id
+                            "https://api.klizi.cn/API/ce/qian.php?qq=${atId}&qq1=${author().id}"    // id调换为at的id和此人id
+                        } else {
+                            "https://api.klizi.cn/API/ce/qian.php?qq=${author().id}&qq1=$atId"      // id调换为此人id和at的id
+                        }
+                    }   // 牵图片链接
+                    "谢谢" -> "https://api.klizi.cn/API/ce/xie.php?qq=$atId"  // 谢图片链接
+                    "比心", "笔芯" -> "https://api.klizi.cn/API/ce/xin.php?qq=$atId"    // 比心图片链接
+                    "鄙视" -> "https://api.klizi.cn/API/ce/bishi.php?qq=$atId"    // 鄙视图片链接
+                    else -> ""  // 空图片链接
+                }
+                val dir = File("${GlobalVariable.botTemp}\\image")  // 获取图片存放目录
+                if (!dir.exists()) {    // 判断图片存放目录是否存在
+                    dir.mkdirs()    // 创建图片存放目录
+                }
+                if (url.isNotEmpty()) {   // 判断图片链接是否为空
+                    group().send(bot.uploadImage(URLResource(URL(url))))    // 发送图片
+                }
             }
         }
     }
-}
 
-@OptIn(ExperimentalSimbotApi::class)
-@RobotListen(desc = "搜图", isBoot = true)
-@Filter("搜图", matchType = MatchType.TEXT_CONTAINS)
-suspend fun GroupMessageEvent.searchMap(session: ContinuousSessionContext) {
-    val url = "https://yandex.com/images/search?family=yes&rpt=imageview&url="
-    for (message in messageContent.messages) {  // 遍历消息内容
-        if (message is Image) {   // 判断消息内容是否为图片消息
-            val imgUrl = message.resource().name    // 获取图片链接
-            group().send(url + UrlUtil.encode(imgUrl))   // 发送图片链接
+    @OptIn(ExperimentalSimbotApi::class)
+    @RobotListen(desc = "搜图", isBoot = true)
+    @Filter("搜图", matchType = MatchType.TEXT_CONTAINS)
+    suspend fun GroupMessageEvent.searchMap(session: ContinuousSessionContext) {
+        val url = "https://yandex.com/images/search?family=yes&rpt=imageview&url="
+        for (message in messageContent.messages) {  // 遍历消息内容
+            if (message is Image) {   // 判断消息内容是否为图片消息
+                val imgUrl = message.resource().name    // 获取图片链接
+                group().send(url + UrlUtil.encode(imgUrl))   // 发送图片链接
+                return  // 跳出方法
+            }
+        }
+        val pic = sendAndWait("请发送图片...", 30, TimeUnit.SECONDS) // 获取图片
+        pic.let {   // 判断图片是否为空
+            if (it is Image<*>) {   // 判断图片是否为图片消息
+                val imgUrl = it.resource().name   // 获取图片链接
+                send(url + URLEncoder.encode(imgUrl))   // 发送图片链接
+                return  // 跳出方法
+            }
+        }
+
+    }
+
+    /**
+     * 聊天
+     * @receiver GroupMessageEvent
+     */
+    @RobotListen(isBoot = true, desc = "陪聊服务")
+    @Filter(target = TargetFilter(atBot = true))
+    suspend fun GroupMessageEvent.chat() {
+        val msg = messageContent.plainText.trim()   // 获取消息内容
+        if (msg.isEmpty()) {    // 判断消息内容是否为空
             return  // 跳出方法
         }
-    }
-    val pic = sendAndWait("请发送图片...", 30, TimeUnit.SECONDS) // 获取图片
-    pic.let {   // 判断图片是否为空
-        if (it is Image<*>) {   // 判断图片是否为图片消息
-            val imgUrl = it.resource().name   // 获取图片链接
-            send(url + URLEncoder.encode(imgUrl))   // 发送图片链接
+        val url = "http://ruohuan.xiaoapi.cn/API/other/xiaoai.php?msg=$msg" // 获取接口链接
+        val reply = HttpUtil.getJsonClassFromUrl(url, Chat::class.java).text    // 获取回复内容
+        if (reply.isEmpty()) {  // 判断回复内容是否为空
+            group().send(At(author().id) + " ${msg}?".toText())  // 发送消息
             return  // 跳出方法
         }
-    }
+        group().send(At(author().id) + " $reply".toText())  // 发送消息
 
-}
-
-/**
- * 聊天
- * @receiver GroupMessageEvent
- */
-@RobotListen(isBoot = true, desc = "陪聊服务")
-@Filter(target = TargetFilter(atBot = true))
-suspend fun GroupMessageEvent.chat() {
-    val msg = messageContent.plainText.trim()   // 获取消息内容
-    if (msg.isEmpty()) {    // 判断消息内容是否为空
-        return  // 跳出方法
     }
-    val url = "http://ruohuan.xiaoapi.cn/API/other/xiaoai.php?msg=$msg" // 获取接口链接
-    val reply = HttpUtil.getJsonClassFromUrl(url, Chat::class.java).text    // 获取回复内容
-    if (reply.isEmpty()) {  // 判断回复内容是否为空
-        group().send(At(author().id) + " ${msg}?".toText())  // 发送消息
-        return  // 跳出方法
-    }
-    group().send(At(author().id) + " $reply".toText())  // 发送消息
-
 }
