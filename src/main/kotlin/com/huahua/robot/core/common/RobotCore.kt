@@ -44,6 +44,7 @@ import javax.annotation.PostConstruct
 
     }
 
+
     companion object {
         var applicationContext: ApplicationContext? = null
 
@@ -108,4 +109,8 @@ import javax.annotation.PostConstruct
             return OriginBotManager.getAnyBot()
         }
     }
+}
+inline fun <T> T.isNull(block: () -> Unit): T {
+    if (this == null) block()
+    return this
 }

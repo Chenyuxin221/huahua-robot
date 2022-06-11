@@ -91,19 +91,25 @@ object HttpUtil {
     private fun request(httpRequestBase: HttpRequestBase): ResponseEntity {
         try {
             val responseEntity = ResponseEntity()   // 创建响应实体
-            httpRequestBase.setHeader(HttpHeaders.USER_AGENT,
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36")   // 设置User-Agent
-            httpRequestBase.setHeader(HttpHeaders.ACCEPT,
-                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")  // 设置Accept
+            httpRequestBase.setHeader(
+                HttpHeaders.USER_AGENT,
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36"
+            )   // 设置User-Agent
+            httpRequestBase.setHeader(
+                HttpHeaders.ACCEPT,
+                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+            )  // 设置Accept
             try {   // 尝试获取响应
                 closeableHttpClient.execute(httpRequestBase).use {  // 创建HttpGet请求
                     val entity = it.entity  // 获取响应实体
                     responseEntity.entity = EntityUtils.toByteArray(entity) // 获取响应内容
                     responseEntity.response = String(responseEntity.entity, StandardCharsets.UTF_8) // 获取响应内容
                     responseEntity.cookies = store.cookies.stream() // 获取响应Cookie
-                        .collect(Collectors.toMap({ obj: Cookie -> obj.name },
-                            { obj: Cookie -> obj.value },
-                            { k1: String, _: String -> k1 }))   // 收集响应Cookie
+                        .collect(
+                            Collectors.toMap({ obj: Cookie -> obj.name },
+                                { obj: Cookie -> obj.value },
+                                { k1: String, _: String -> k1 })
+                        )   // 收集响应Cookie
                     responseEntity.headers = it.allHeaders.clone()  // 获取响应头
                     httpRequestBase.setHeader(SM.COOKIE, "")    // 清空Cookie
                     store.clear()   // 清空Cookie
@@ -152,7 +158,8 @@ object HttpUtil {
     }
 
     private fun <K, V> Map<K, V>.toQueryString(): String =
-        this.map { "${it.key}=${URLEncoder.encode(it.value.toString(), "utf-8")}" }.joinToString("&")   // 转换为QueryString
+        this.map { "${it.key}=${URLEncoder.encode(it.value.toString(), "utf-8")}" }
+            .joinToString("&")   // 转换为QueryString
 
     fun get(requestEntity: RequestEntity.() -> Unit): ResponseEntity {  // 创建Get请求
         return request(HttpMethod.Get, requestEntity)  // 创建请求实体
@@ -192,7 +199,8 @@ object HttpUtil {
     fun getJson(url: String, separator: String): com.alibaba.fastjson2.JSONObject { // 创建解析腾讯接口返回结果的一个方法
         val body = get(url).response.replace(" ", "")   // 获取响应内容
         var jsonStr = body.substring(body.indexOf(separator) + separator.length + 1)    // 获取响应内容的json字符串
-        jsonStr = jsonStr.substring(0, jsonStr.indexOf("</script>")).replace(Regex(":\\s?undefined"), ":\"\"")  // 获取script标签中的json字符串
+        jsonStr = jsonStr.substring(0, jsonStr.indexOf("</script>"))
+            .replace(Regex(":\\s?undefined"), ":\"\"")  // 获取script标签中的json字符串
         return JSON.parseObject(jsonStr)    // 解析json字符串
     }
 
@@ -214,8 +222,8 @@ object HttpUtil {
      * @param clazz Class<T>    实体类
      * @return T    实体类
      */
-    fun <T> getJsonClassFromUrl(url: String,clazz:Class<T>):T{
-        return Gson().fromJson(getBody(url),clazz)  // 从返回json字符串的网址中获取json对象
+    fun <T> getJsonClassFromUrl(url: String, clazz: Class<T>): T {
+        return Gson().fromJson(getBody(url), clazz)  // 从返回json字符串的网址中获取json对象
     }
 
 
@@ -224,9 +232,8 @@ object HttpUtil {
      * @param url String    网址
      * @return Response 返回体
      */
-    fun getResponse(url: String): Response {
-        return OkHttpClient().newCall(Request.Builder().url(url).build()).execute() // 获取网页返回请求体
-    }
+    fun getResponse(url: String): Response = OkHttpClient().newCall(Request.Builder().url(url).build()).execute() // 获取网页返回请求体
+
 
 }
 
@@ -269,6 +276,7 @@ class Params {  // 参数
         }
     }
 }
+
 class ResponseEntity {
     var cookies: Map<String, String> = HashMap()    // Cookie
     var headers: Array<Header> = emptyArray()   // 请求头

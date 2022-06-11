@@ -2,8 +2,7 @@ package com.huahua.robot.listener.grouplistener
 
 import com.google.gson.Gson
 import com.huahua.robot.core.annotation.RobotListen
-import com.huahua.robot.core.common.send
-import com.huahua.robot.core.common.sendAndWait
+import com.huahua.robot.core.common.*
 import com.huahua.robot.core.enums.RobotPermission
 import com.huahua.robot.entity.Chat
 import com.huahua.robot.entity.LuckyTime
@@ -23,13 +22,17 @@ import love.forte.simboot.annotation.TargetFilter
 import love.forte.simboot.filter.MatchType
 import love.forte.simbot.ExperimentalSimbotApi
 import love.forte.simbot.LoggerFactory
+import love.forte.simbot.action.sendIfSupport
 import love.forte.simbot.event.ContinuousSessionContext
+import love.forte.simbot.event.FriendMessageEvent
 import love.forte.simbot.event.GroupMessageEvent
+import love.forte.simbot.event.MessageEvent
 import love.forte.simbot.message.*
 import love.forte.simbot.resources.FileResource
 import love.forte.simbot.resources.URLResource
 import org.springframework.stereotype.Component
 import java.io.File
+import java.io.IOException
 import java.net.URL
 import java.net.URLEncoder
 import java.util.*
@@ -40,22 +43,22 @@ import kotlin.time.Duration.Companion.minutes
 
 @Component
 @SuppressWarnings("all")
-class GroupListener {
+class Listener {
     private val lotteryPrefix: List<String> = listOf("chou", "cou", "c", "抽", "操", "艹", "草")    //抽奖前缀
     private val lotterySuffix: List<String> = listOf("jiang", "j", "奖", "wo", "w", "我") // 抽奖后缀
-    private val log = LoggerFactory.getLogger(GroupListener::class.jvmName) // 日志
+    private val log = LoggerFactory.getLogger(Listener::class.jvmName) // 日志
 
     /**
      * 菜单||项目文档||项目地址
      * @receiver GroupMessageEvent
      */
     @RobotListen(isBoot = true, desc = "菜单服务")
-    @Filter(".h|.help", matchType = MatchType.REGEX_MATCHES)
-    suspend fun GroupMessageEvent.menu() {
+    @Filter("\\.h|\\.help", matchType = MatchType.REGEX_MATCHES)
+    suspend fun MessageEvent.menu() {
         val functionMenuUrl = "https://www.yuque.com/qingsi-zwnmu/xyuvvi/wrbzgy"    // 项目文档
         val gitHubUrl = "https://github.com/Chenyuxin221/huahua-robot"           // 项目地址
         val result = "功能菜单：${functionMenuUrl}\n项目地址：${gitHubUrl}"         // 菜单内容
-        group().send(result)                                              // 发送菜单
+        send(result)                                              // 发送菜单
     }
 
 
@@ -65,17 +68,17 @@ class GroupListener {
      */
     @RobotListen(isBoot = true, desc = "写真服务")
     @Filter(value = "来点好看的|来点好康的", matchType = MatchType.REGEX_CONTAINS)
-    suspend fun GroupMessageEvent.setu() {
+    suspend fun MessageEvent.setu() {
         val url = "http://localhost:8080/api/photo"
         val imgUrl = HttpUtil.getJsonClassFromUrl(url, Setu::class.java).url    // 获取图片地址
         val image: Image<*> = bot.uploadImage(FileResource(File(imgUrl)))   // 上传图片
-        if (botCompareToAuthor()) {  // 判断bot是否有操作权限
+        if (this is GroupMessageEvent && botCompareToAuthor()) {  // 判断bot是否有操作权限
             author().mute((5).minutes)  // 禁言5分钟
             delete()   // 撤回消息
         }
-        val flag = group().send(image)  // 发送图片并获取标记
+        val flag = sendIfSupport(image)  // 发送图片并获取标记
         bot.launch {    // 启动协程
-            if (flag.isSuccess) {   // 判断发送是否成功
+            if (flag != null && flag.isSuccess) {   // 判断发送是否成功
                 delay(60000)    // 延迟一分钟
                 flag.deleteIfSupport()  // 通过标记撤回此图片
             }
@@ -88,19 +91,23 @@ class GroupListener {
      */
     @RobotListen(isBoot = true, desc = "买家秀")
     @Filter(value = "买家秀", matchType = MatchType.TEXT_EQUALS)
-    suspend fun GroupMessageEvent.buyerShow() {
+    suspend fun MessageEvent.buyerShow() {
         val imgUrl = "https://api.vvhan.com/api/tao"
         val imgUrl2 = "https://api.uomg.com/api/rand.img3"
         val img: Image<*> = bot.uploadImage(URLResource(URL(imgUrl2)))  // 上传图片
-        val receipt: MessageReceipt = group().send(img) // 发送图片并获取标记
-        if (botCompareToAuthor()) { //判断是否有操作权限
+        val receipt = send(img) // 发送图片并获取标记
+        if (this is GroupMessageEvent && botCompareToAuthor()) { //判断是否有操作权限
             author().mute((5).minutes)  // 禁言5分钟
             delete()   // 撤回消息
         }
         bot.launch {    // 启动协程
-            if (receipt.isSuccess) {    // 判断发送是否成功
-                delay(6000)   // 延迟一分钟
-                receipt.deleteIfSupport()   // 通过标记撤回此图片
+            receipt?.let {
+                if (it.isSuccess) {  // 判断发送是否成功
+                    delay(60000)    // 延迟一分钟
+                    it.deleteIfSupport()  // 通过标记撤回此图片
+                }
+            }.isNull {
+                send("发送失败")
             }
         }
 
@@ -113,7 +120,7 @@ class GroupListener {
      */
     @RobotListen(isBoot = true, desc = "养眼的服务")
     @Filter(value = "来点妹子", matchType = MatchType.TEXT_EQUALS)
-    suspend fun GroupMessageEvent.showGirls() {
+    suspend fun MessageEvent.showGirls() {
         val url = "https://api.iyk0.com/sjmn"
         val response = HttpUtil.getResponse(url)    // 获取响应体
         val dir = File("${GlobalVariable.botTemp}\\image")  // 获取临时文件夹
@@ -124,11 +131,18 @@ class GroupListener {
         val imgFile = File("${dir.absolutePath}\\girl.jpg") // 获取图片文件
         imgFile.writeBytes(response.body()?.bytes()!!)  //将图片写入本地文件
         val img = bot.uploadImage(FileResource(File(imgFile.absolutePath))) // 上传文件
-        val receipt = group().send(img) // 发送图片并获取标记
+        Sender.sendAdminMsg(listOf(getId(), "发送消息[", img, "]失败"))
+        val receipt = send(img) // 发送图片并获取标记
         bot.launch {    // 启动协程
-            if (receipt.isSuccess) {    // 判断发送是否成功
-                delay(60000)    // 延迟一分钟
-                receipt.deleteIfSupport()   // 通过标记撤回此图片
+            receipt?.let {
+                if (it.isSuccess) {  // 判断发送是否成功
+                    delay(60000)    // 延迟一分钟
+                    it.deleteIfSupport()  // 通过标记撤回此图片
+                } else null
+
+            }.isNull {
+                Sender.sendAdminMsg("${getId()}发送消息[${img}]失败")
+
             }
         }
     }
@@ -139,15 +153,15 @@ class GroupListener {
      */
     @RobotListen(isBoot = true, desc = "涩图服务")
     @Filter(value = "来份涩图|来份r18涩图", matchType = MatchType.REGEX_MATCHES)
-    suspend fun GroupMessageEvent.sendSetu() {
+    suspend fun MessageEvent.sendSetu() {
         val msg = messageContent.plainText  // 获取消息内容
         val r18: Boolean = msg.lowercase(Locale.getDefault()).contains("r18")   // 判断是否包含r18
         val setu: SetuIcon = getJson(if (r18) "1" else "0") ?: return   // 获取涩图实体
         val data = setu.data    // 获取涩图数据
         val stringBuilder = "标题: ${data[0].title}\n链接: ${data[0].url}"  // 拼接消息内容
-        val flag = group().send(stringBuilder)  // 发送消息并获取标记
+        val flag = send(stringBuilder)  // 发送消息并获取标记
         try {   // 尝试
-            if (botCompareToAuthor()) {   // 判断是否有操作权限
+            if (this is GroupMessageEvent && botCompareToAuthor()) {   // 判断是否有操作权限
                 author().mute((300000).minutes) // 禁言5分钟
                 delete() // 撤回消息
             }
@@ -156,8 +170,12 @@ class GroupListener {
         } finally {  // 最终
             bot.launch {    // 启动协程
                 delay(30000)    // 延迟30秒
-                if (flag.isSuccess) {   // 判断发送是否成功
-                    flag.deleteIfSupport()  // 通过标记撤回此图片
+                flag?.let {
+                    if (it.isSuccess) {  // 判断发送是否成功
+                        it.deleteIfSupport()  // 通过标记撤回此图片
+                    } else null
+                }.isNull {
+                    Sender.sendAdminMsg("${getId()}发送消息[${stringBuilder}]失败")
                 }
             }
         }
@@ -298,7 +316,6 @@ class GroupListener {
         }
 
         val r = Regex("^[\u4e00-\u9fa5].*$").find(msg)?.value   // 获取消息内容中的中文
-        println(r)
         if (r != null) {    // 判断消息内容不为空
             if (r.length in 3..4 && msg.contains("人")) {    // 判断消息内容长度是否在3到4个字符且包含人
                 val chars = msg.toCharArray().joinToString("  ")    // 将消息内容转换成字符数组并使用空格分隔
@@ -345,12 +362,24 @@ class GroupListener {
                     "鄙视" -> "https://api.klizi.cn/API/ce/bishi.php?qq=$atId"    // 鄙视图片链接
                     else -> ""  // 空图片链接
                 }
-                val dir = File("${GlobalVariable.botTemp}\\image")  // 获取图片存放目录
+                val localPath = "${GlobalVariable.botTemp}\\image"
+                val dir = File(localPath)  // 获取图片存放目录
                 if (!dir.exists()) {    // 判断图片存放目录是否存在
                     dir.mkdirs()    // 创建图片存放目录
                 }
-                if (url.isNotEmpty()) {   // 判断图片链接是否为空
-                    group().send(bot.uploadImage(URLResource(URL(url))))    // 发送图片
+                val file = File("$localPath\\pic.png")  // 获取图片文件
+                try {
+                    HttpUtil.getResponse(url).body()?.bytes()?.let { file.writeBytes(it) }  // 下载图片
+                    // 异步下载图片
+                    when {
+                        file.exists() && file.isFile -> {   // 判断图片文件是否存在且是文件
+                            group().send(bot.uploadImage(FileResource(file)))    // 发送图片
+                        }
+                    }
+                } catch (e: IOException) {
+                    group().send("图片获取失败，请稍后再试")
+                } finally {
+                    file.delete()    // 删除图片
                 }
             }
         }
@@ -359,12 +388,12 @@ class GroupListener {
     @OptIn(ExperimentalSimbotApi::class)
     @RobotListen(desc = "搜图", isBoot = true)
     @Filter("搜图", matchType = MatchType.TEXT_CONTAINS)
-    suspend fun GroupMessageEvent.searchMap(session: ContinuousSessionContext) {
+    suspend fun MessageEvent.searchMap(session: ContinuousSessionContext) {
         val url = "https://yandex.com/images/search?family=yes&rpt=imageview&url="
         for (message in messageContent.messages) {  // 遍历消息内容
             if (message is Image) {   // 判断消息内容是否为图片消息
                 val imgUrl = message.resource().name    // 获取图片链接
-                group().send(url + UrlUtil.encode(imgUrl))   // 发送图片链接
+                send(url + UrlUtil.encode(imgUrl))   // 发送图片链接
                 return  // 跳出方法
             }
         }
@@ -385,18 +414,30 @@ class GroupListener {
      */
     @RobotListen(isBoot = true, desc = "陪聊服务")
     @Filter(target = TargetFilter(atBot = true))
-    suspend fun GroupMessageEvent.chat() {
+    suspend fun MessageEvent.chat() {
         val msg = messageContent.plainText.trim()   // 获取消息内容
         if (msg.isEmpty()) {    // 判断消息内容是否为空
             return  // 跳出方法
         }
         val url = "http://ruohuan.xiaoapi.cn/API/other/xiaoai.php?msg=$msg" // 获取接口链接
         val reply = HttpUtil.getJsonClassFromUrl(url, Chat::class.java).text    // 获取回复内容
-        if (reply.isEmpty()) {  // 判断回复内容是否为空
-            group().send(At(author().id) + " ${msg}?".toText())  // 发送消息
-            return  // 跳出方法
-        }
-        group().send(At(author().id) + " $reply".toText())  // 发送消息
 
+        when (this) {
+            is GroupMessageEvent -> {
+                if (reply.isEmpty()) {
+                    send(At(author().id) + " ${msg}?".toText())
+                    return
+                }
+                send(At(author().id) + " $reply".toText())  // 发送消息
+            }  // 发送消息
+            is FriendMessageEvent -> {
+                if (reply.isEmpty()) {
+                    send("喵喵喵？")
+                    return
+                }
+                send(reply)  // 发送消息
+            }  // 发送消息
+
+        }
     }
 }

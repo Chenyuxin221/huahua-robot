@@ -1,9 +1,9 @@
 package com.huahua.robot.listener.grouplistener
 
 import com.huahua.robot.core.annotation.RobotListen
-import com.huahua.robot.utils.GlobalVariable
-import love.forte.simbot.event.GroupRequestEvent
-import love.forte.simbot.event.JoinRequestEvent
+import com.huahua.robot.core.common.Sender
+import love.forte.simbot.component.mirai.event.MiraiMemberJoinEvent
+import love.forte.simbot.component.mirai.event.MiraiMemberJoinRequestEvent
 import org.springframework.stereotype.Component
 
 /**
@@ -16,29 +16,29 @@ import org.springframework.stereotype.Component
 class JoinGroupListener {
 
     /**
-     * 没测试过 或许能用？
-     * @receiver JoinGroupListener
-     * @param group GroupRequestEvent
-     * @param event JoinRequestEvent
+     * 加群监听
+     * @description 加群监听
+     * @receiver MiraiMemberJoinEvent   入群事件
      */
-    @RobotListen(isBoot = true, desc = "加群监听")
-    suspend fun JoinGroupListener.joinGroup(group: GroupRequestEvent,event:JoinRequestEvent) {
-        val applicant = group.user()   //申请人
-        val name = applicant.username   //申请人名字
-        val id = applicant.id   //申请人id
-        val message = group.message ?: "Ta什么也没填" //申请信息
-        val type = when(group.type.ordinal){
-            0 -> "主动申请"
-            1 -> "被邀请"
-            else -> "emmm"
-        }
-        val sb = StringBuilder("\t入群申请\n")
-            .append("申请人：${name}(${id})\n")
-            .append("申请理由：${message}\n")
-            .append("申请类型：$type")
-        if(group.type.ordinal==1){
-            sb.append("\n邀请人：${event.message}")
-        }
-        GlobalVariable.BOT?.group(group.id)?.send(sb.toString())
+    @RobotListen(isBoot = true)
+    suspend fun MiraiMemberJoinEvent.joinGroup() {
+        val group = group() //所在群
+        val member = member()   //加群人
+        group().send("呐呐，欢迎 ${member.nickname} 加入群聊,请查看群公告")
+        group().send("你大概是本群的第${group.currentMember}个人")
+        group().send("别忘了给我点点小星星哦\nhttps://github.com/Chenyuxin221/huahua-robot")
+        group().send("最后最后，有需要的话可以发送\".h|.help\"查看帮助哦")
+    }
+
+    /**
+     * 加群监听
+     * @receiver MiraiMemberJoinRequestEvent    加群请求事件
+     */
+    @RobotListen(isBoot = true)
+    suspend fun MiraiMemberJoinRequestEvent.joinGroup() {
+        val text = message  //加群请求消息
+        val group = group() //所在群
+        val member = user() //加群人
+        Sender.sendGroupMsg(group.id.toString(), "入群申请：\n申请人：${member.nickOrUsername}\n申请原因：${text}\n请管理员前往处理")
     }
 }

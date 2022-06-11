@@ -1,16 +1,13 @@
 package com.huahua.robot.utils
 
 import com.huahua.robot.core.common.RobotCore
-import com.huahua.robot.music.MusicInfo
-import com.huahua.robot.music.entity.neteasemusic.NeteaseMusic
-import com.huahua.robot.music.entity.qqmusic.Data
-import com.huahua.robot.music.entity.qqmusic.QQMusic
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import love.forte.simbot.ID
 import love.forte.simbot.component.mirai.MiraiComponent
 import love.forte.simbot.component.mirai.message.MiraiMusicShare
+import love.forte.simbot.event.MessageEvent
 import love.forte.simbot.message.At
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.Messages
@@ -28,7 +25,7 @@ import kotlin.io.path.Path
  * @date 2022-05-07 22:34
  */
 class MessageUtil {
-    private val json = Json{
+    private val json = Json {
         isLenient = true
         ignoreUnknownKeys = true
         serializersModule = SerializersModule {
@@ -43,8 +40,8 @@ class MessageUtil {
      * @return String   json字符串
      * @see messages
      */
-    fun encodeMessage(messages: Messages):String{
-        return json.encodeToString(Messages.serializer,messages)
+    fun encodeMessage(messages: Messages): String {
+        return json.encodeToString(Messages.serializer, messages)
     }
 
     /**
@@ -52,11 +49,11 @@ class MessageUtil {
      * @param messageJson String json格式的messages
      * @return Messages messages
      */
-    fun decodeMessage(messageJson:String):Messages{
-        return json.decodeFromString(Messages.serializer,messageJson)
+    fun decodeMessage(messageJson: String): Messages {
+        return json.decodeFromString(Messages.serializer, messageJson)
     }
 
-    companion object{
+    companion object {
         fun getAtList(messageContent: ReceivedMessageContent): List<ID> {
             return messageContent.messages.filter { it.key == At.Key }.map { (it as At).target }
         }
@@ -64,54 +61,200 @@ class MessageUtil {
         fun getImageMessage(path: String): Message {
             return runBlocking { RobotCore.getBot()!!.uploadImage(Path(path).toResource()) }
         }
-        fun getImageMessage(file:File):Message{
+
+        fun getImageMessage(file: File): Message {
             return runBlocking {
-                RobotCore.getBot()!!.uploadImage(FileResource(file)) }
+                RobotCore.getBot()!!.uploadImage(FileResource(file))
+            }
         }
 
-        fun getMusicShare(musicInfo: MusicInfo): Message {
-            return MiraiMusicShare(
-                musicInfo.type,
-                musicInfo.title,
-                musicInfo.artist,
-                musicInfo.jumpUrl,
-                musicInfo.previewUrl,
-                musicInfo.musicUrl,
-                "[分享]${musicInfo.title}"
-            )
-        }
-        fun getMusicShare(music:QQMusic, type:MusicKind):Message{
-            return MiraiMusicShare(
-                type,
-                music.data.song,
-                music.data.singer,
-                music.data.url,
-                music.data.picture,
-                music.data.music,
-            "[分享]${music.data.song+"-"+music.data.singer}"
-            )
-        }
-        fun getMusicShare(music:Data,type:MusicKind):Message{
-            return MiraiMusicShare(
-                type,
-                music.song,
-                music.singer,
-                music.url,
-                music.picture,
-                music.music,
-                "[分享]${music.song+"-"+music.singer}"
-            )
-        }
 
-        fun getMusicShare(music:NeteaseMusic):Message = MiraiMusicShare(
-                MusicKind.NeteaseCloudMusic,
-            music.song,
-            music.singer,
-            "https://music.163.com/#/song?id=${music.url.split("=")[1]}",
-            music.img,
-            music.url,
-            "[分享]${music.song}-${music.singer}"
-            )
+        /**
+         * 获取音乐分享消息
+         * @param kind MusicKind    音乐类型
+         * @param song String    歌曲名
+         * @param singer String   歌手名
+         * @param jumpUrl String    跳转链接
+         * @param picture String    封面图片路径
+         * @param musicUrl String   音乐链接
+         * @param brief String  简介
+         * @return MiraiMusicShare  音乐分享消息
+         */
+        private fun getMusicShare(
+            kind: MusicKind,
+            song: String,
+            singer: String,
+            jumpUrl: String,
+            picture: String,
+            musicUrl: String,
+            brief: String,
+        ) = MiraiMusicShare(
+            kind,
+            song,
+            singer,
+            jumpUrl,
+            picture,
+            musicUrl,
+            brief
+        )
 
+        /**
+         *  获取QQ音乐分享卡片消息
+         * @param song String   歌曲名
+         * @param singer String 歌手名
+         * @param jumpUrl String    跳转链接
+         * @param picture String    封面图片
+         * @param musicUrl String   音乐链接
+         * @param brief String  简介
+         * @return Message   QQ音乐分享卡片消息
+         */
+        fun getQQMusicShare(
+            song: String,
+            singer: String,
+            jumpUrl: String,
+            picture: String,
+            musicUrl: String,
+            brief: String = "[分享]${"$song-$singer"}",
+        ): Message = getMusicShare(
+            kind = MusicKind.QQMusic,
+            song = song,
+            singer = singer,
+            jumpUrl = jumpUrl,
+            picture = picture,
+            musicUrl = musicUrl,
+            brief = brief
+        )
+
+        /**
+         *  获取QQ音乐分享卡片消息
+         * @param song String   歌曲名
+         * @param singer String 歌手名
+         * @param jumpUrl String    跳转链接
+         * @param picture String    封面图片
+         * @param musicUrl String   音乐链接
+         * @param brief String  简介
+         * @return Message   QQ音乐分享卡片消息
+         */
+        fun MessageEvent.getQQMusicShare(
+            song: String,
+            singer: String,
+            jumpUrl: String,
+            picture: String,
+            musicUrl: String,
+            brief: String = "[分享]${"$song-$singer"}",
+        ): Message = getMusicShare(
+            kind = MusicKind.QQMusic,
+            song = song,
+            singer = singer,
+            jumpUrl = jumpUrl,
+            picture = picture,
+            musicUrl = musicUrl,
+            brief = brief
+        )
+
+        /**
+         * 获取网易云音乐分享卡片消息
+         * @param song String   歌曲名
+         * @param singer String     歌手名
+         * @param jumpUrl String    跳转链接
+         * @param picture String    封面图片
+         * @param musicUrl String   音乐链接
+         * @param brief String  简介
+         * @return Message  网易云分享卡片消息
+         */
+        fun getNeteaseCloudMusicShare(
+            song: String,
+            singer: String,
+            jumpUrl: String,
+            picture: String,
+            musicUrl: String,
+            brief: String = "[分享]${song}-${singer}",
+        ): Message = MiraiMusicShare(
+            MusicKind.NeteaseCloudMusic,
+            song,
+            singer,
+            jumpUrl,
+            picture,
+            musicUrl,
+            brief
+        )
+
+        /**
+         * 获取网易云音乐分享卡片消息
+         * @param song String   歌曲名
+         * @param singer String     歌手名
+         * @param jumpUrl String    跳转链接
+         * @param picture String    封面图片
+         * @param musicUrl String   音乐链接
+         * @param brief String  简介
+         * @return Message  网易云分享卡片消息
+         */
+        fun MessageEvent.getNeteaseCloudMusicShare(
+            song: String,
+            singer: String,
+            jumpUrl: String,
+            picture: String,
+            musicUrl: String,
+            brief: String = "[分享]${song}-${singer}",
+        ): Message = MiraiMusicShare(
+            MusicKind.NeteaseCloudMusic,
+            song,
+            singer,
+            jumpUrl,
+            picture,
+            musicUrl,
+            brief
+        )
+
+        /**
+         * 获取酷狗音乐分享卡片消息
+         * @param song String   歌曲名
+         * @param singer String    歌手名
+         * @param jumpUrl String    跳转链接
+         * @param picture String    封面图片
+         * @param musicUrl String   音乐链接
+         * @param brief String  简介
+         */
+        fun getKugouMusicShare(
+            song: String,
+            singer: String,
+            jumpUrl: String,
+            picture: String,
+            musicUrl: String,
+            brief: String = "[分享]${song}-${singer}",
+        ): Message = getMusicShare(
+            kind = MusicKind.KugouMusic,
+            song = song,
+            singer = singer,
+            jumpUrl = jumpUrl,
+            picture = picture,
+            musicUrl = musicUrl,
+            brief = brief
+        )
+        /**
+         * 获取酷狗音乐分享卡片消息
+         * @param song String   歌曲名
+         * @param singer String    歌手名
+         * @param jumpUrl String    跳转链接
+         * @param picture String    封面图片
+         * @param musicUrl String   音乐链接
+         * @param brief String  简介
+         */
+        fun MessageEvent.getKugouMusicShare(
+            song: String,
+            singer: String,
+            jumpUrl: String,
+            picture: String,
+            musicUrl: String,
+            brief: String = "[分享]${song}-${singer}",
+        ): Message = getMusicShare(
+            kind = MusicKind.KugouMusic,
+            song = song,
+            singer = singer,
+            jumpUrl = jumpUrl,
+            picture = picture,
+            musicUrl = musicUrl,
+            brief = brief
+        )
     }
 }
