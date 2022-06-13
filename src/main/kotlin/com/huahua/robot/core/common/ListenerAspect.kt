@@ -32,6 +32,7 @@ class ListenerAspect {
                 -"执行了监听器${signature.name}(${annotation.desc})"
                 -("执行拦截器耗时: " + (System.currentTimeMillis() - start))
             }
+
             return proceed()
         }
 

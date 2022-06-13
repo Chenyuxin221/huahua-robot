@@ -1,9 +1,11 @@
-@file:Suppress("MemberVisibilityCanBePrivate")
+
 package com.huahua.robot.core.common
 
 
 import com.huahua.robot.core.mapper.GroupBootStateMapper
+import com.huahua.robot.utils.GlobalVariable
 import love.forte.simbot.Bot
+import love.forte.simbot.FragileSimbotApi
 import love.forte.simbot.OriginBotManager
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
@@ -105,8 +107,10 @@ import javax.annotation.PostConstruct
         fun isBotAdministrator(accountCode: String): Boolean {
             return ADMINISTRATOR.contains(accountCode)
         }
+
         fun getBot(): Bot? {
-            return OriginBotManager.getAnyBot()
+            @Suppress("OPT_IN_USAGE")
+            return OriginBotManager.getBot(GlobalVariable.BOTID)
         }
     }
 }

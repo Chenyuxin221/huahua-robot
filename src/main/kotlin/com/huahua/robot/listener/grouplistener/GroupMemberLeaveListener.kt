@@ -16,10 +16,9 @@ class GroupMemberLeaveListener {
 
     /**
      * 新写的退群监听
-     * 没测试过，不知道能不能用 或许能把？？？
      * @receiver MiraiMemberLeaveEvent
      */
-    @RobotListen(isBoot = true)
+    @RobotListen(isBoot = true, desc = "退群监听")
     suspend fun MiraiMemberLeaveEvent.leaveGroup() {
         val user = member()
         val operator = operator()

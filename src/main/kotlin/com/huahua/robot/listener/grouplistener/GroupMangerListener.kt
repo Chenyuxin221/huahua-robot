@@ -77,10 +77,10 @@ class GroupMangerListener {
         permission = RobotPermission.ADMINISTRATOR,
         permissionsRequiredByTheRobot = RobotPermission.ADMINISTRATOR)
     @Filter("解", matchType = MatchType.TEXT_STARTS_WITH)
-    suspend fun GroupMessageEvent.unBan(event: GroupMessageEvent) {
-        for (message: Message.Element<*> in messageContent.messages) {
-            if (message is At) {
-                group().member(message.target)?.mute(0.minutes)
+    suspend fun GroupMessageEvent.unBan() {
+        messageContent.messages.forEach{
+            if (it is At) {
+                group().member(it.target)?.unmute()
             }
         }
     }
@@ -110,7 +110,7 @@ class GroupMangerListener {
         permission = RobotPermission.ADMINISTRATOR,
         permissionsRequiredByTheRobot = RobotPermission.ADMINISTRATOR
     )
-    @Filter("开全体禁言")
+    @Filter("关全体禁言")
     suspend fun GroupMessageEvent.groupUnBan(){
         group().unmute()
     }
@@ -119,7 +119,6 @@ class GroupMangerListener {
      * 踢人操作
      * -------------尚未测试
      * @receiver GroupMessageEvent
-     * @param event GroupMessageEvent
      */
     @RobotListen(
         isBoot = true,
@@ -128,7 +127,7 @@ class GroupMangerListener {
         permissionsRequiredByTheRobot = RobotPermission.ADMINISTRATOR
     )
     @Filter("踢", matchType = MatchType.TEXT_STARTS_WITH)
-    suspend fun GroupMessageEvent.kickPerson(event: GroupMessageEvent){
+    suspend fun GroupMessageEvent.kickPerson(){
         for (message: Message.Element<*> in messageContent.messages) {
             if (message is At) {
                 (group().member(message.target) as MiraiMember).kick("芜湖，起飞")

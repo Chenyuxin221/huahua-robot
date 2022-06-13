@@ -49,6 +49,7 @@ class PermissionUtil {
     }
 
 
+
     companion object {  //静态内部类
 
         /**
@@ -111,6 +112,8 @@ class PermissionUtil {
          */
         fun GroupMessageEvent.botCompareToMember(member: Member) =
             runBlocking { botPermission() > memberPermission(member) }  //比较bot和群成员的权限
+
+
     }
 }
 

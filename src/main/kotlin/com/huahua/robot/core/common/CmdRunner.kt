@@ -24,12 +24,11 @@ class CmdRunner : CommandLineRunner {
     @Autowired(required = false) private lateinit var mapper: PhotoMapper
     val log = LoggerFactory.getLogger(CmdRunner::class.jvmName)
 
+    @Suppress("OPT_IN_USAGE")
     override fun run(vararg args: String?) {
         GlobalVariable.BOT = OriginBotManager.getBot(GlobalVariable.BOTID)
         initGlobalVariable()
-        GlobalVariable.BOT?.launch {
-            GlobalVariable.BOT?.friend(GlobalVariable.MASTER)?.send("我好了...")
-        }
+        Sender.sendAdminMsg("我好了")
     }
 
     /**
