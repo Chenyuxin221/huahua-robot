@@ -4,6 +4,7 @@ import com.huahua.robot.core.common.RobotCore
 import com.huahua.robot.core.common.Sender
 import com.huahua.robot.core.common.logger
 import com.huahua.robot.utils.*
+import com.huahua.robot.utils.FileUtil.getTempImage
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -90,16 +91,13 @@ class Cookie {
             cookie.putAll(responseEntity.cookies)
             cookie["key"] = now
             val bytes: ByteArray = responseEntity.entity
-            val path = GlobalVariable.botTemp+"Image"
+            val file = getTempImage("QR.png")
             try {
-                if (!File(path).exists()){
-                    FileUtil.createDir(path)
-                }
-                FileOutputStream("$path\\QR.png").use { fileOutputStream -> fileOutputStream.write(bytes) }
+                file.outputStream().write(bytes)
             } catch (e: IOException) {
                 e.printStackTrace()
             }
-            return "$path\\QR.png"
+            return file.absolutePath
         }
 
     /**

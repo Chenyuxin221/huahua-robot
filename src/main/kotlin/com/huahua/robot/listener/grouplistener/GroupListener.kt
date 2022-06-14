@@ -2,13 +2,17 @@ package com.huahua.robot.listener.grouplistener
 
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.isNull
+import com.huahua.robot.core.common.send
 import com.huahua.robot.core.enums.RobotPermission
 import com.huahua.robot.entity.LuckyTime
+import com.huahua.robot.utils.FileUtil.getTempImage
 import com.huahua.robot.utils.GlobalVariable
 import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.Permission
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
 import com.huahua.robot.utils.PermissionUtil.Companion.botPermission
+import love.forte.simboot.annotation.Filter
+import love.forte.simboot.filter.MatchType
 import love.forte.simbot.LoggerFactory
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.message.At
@@ -17,7 +21,6 @@ import love.forte.simbot.message.plus
 import love.forte.simbot.message.toText
 import love.forte.simbot.resources.FileResource
 import org.springframework.stereotype.Component
-import java.io.File
 import java.io.IOException
 import java.util.*
 import kotlin.time.Duration.Companion.minutes
@@ -65,13 +68,13 @@ class GroupListener {
                             if (lucky.multiple == 1) "".toText() else
                                 ("，真是太棒了，你抽中的奖励翻了${lucky.multiple}倍，" +
                                         "变成了${lucky.time * lucky.multiple}分钟").toText() // 拼接字符串
-                    group().send(message)   // 发送消息
+                    send(message)   // 发送消息
                 }
                 botPermission() == Permission.ADMINISTRATORS -> { // 没有禁言权限但是bot有管理员权限
-                    group().send(At(author().id) + " 你抽个屁的奖".toText())  // 发送消息
+                    send(At(author().id) + " 你抽个屁的奖".toText())  // 发送消息
                 }
                 else -> {  //  没有禁言权限也没有管理员权限 也就是bot为普通成员
-                    group().send("哎呀，无法奖励你~权限不够呢")  // 发送消息
+                    send("哎呀，无法奖励你~权限不够呢")  // 发送消息
                 }
             }
     }
@@ -100,11 +103,11 @@ class GroupListener {
     }
 
     /**
-     * 一些作图操作
+     * 一些作图操作 --静态图片
      * @receiver GroupMessageEvent
      */
     @RobotListen(isBoot = true, desc = "作图服务")
-    suspend fun GroupMessageEvent.test(){
+    suspend fun GroupMessageEvent.picture() {
         val msg = messageContent.plainText.trim()   // 获取消息内容
 
         for (message in messageContent.messages) {  // 遍历消息内容
@@ -144,16 +147,16 @@ class GroupListener {
                     "比心", "笔芯" -> "https://api.klizi.cn/API/ce/xin.php?qq=$atId"    // 比心图片链接
                     "鄙视" -> "https://api.klizi.cn/API/ce/bishi.php?qq=$atId"    // 鄙视图片链接
                     else -> ""  // 空图片链接
+                }.ifEmpty {
+                    return
                 }
-                val localPath = "${GlobalVariable.botTemp}\\image"
-                val dir = File(localPath)  // 获取图片存放目录
-                if (!dir.exists()) {    // 判断图片存放目录是否存在
-                    dir.mkdirs()    // 创建图片存放目录
-                }
-                val file = File("$localPath\\pic.png")  // 获取图片文件
+
+                val file = getTempImage("pic.jpg")  // 获取图片文件
                 try {
-                    HttpUtil.getResponse(url).body()?.bytes()?.also { file.writeBytes(it) }.isNull {
-                        group().send("图片获取失败，请稍后再试")
+                    HttpUtil.getResponse(url).body()?.bytes()?.also {
+                        file.writeBytes(it)
+                    }.isNull {
+                        send("图片获取失败，请稍后再试")
                         return
                     } // 异步下载图片
                     when {
@@ -162,9 +165,39 @@ class GroupListener {
                         }
                     }
                 } catch (e: IOException) {
-                    group().send("图片获取失败，请稍后再试")
+                    send("图片获取失败，请稍后再试")
                 } finally {
                     file.delete()    // 删除图片
+                }
+            }
+        }
+    }
+
+    @RobotListen(isBoot = true, desc = "作图服务-动态图片")
+    suspend fun GroupMessageEvent.gifPicture() {
+        val msg = messageContent.plainText.trim()   // 获取消息内容
+        messageContent.messages.forEach {
+            if (it is At) {
+                val id = it.target
+                val url = when (msg) {
+                    "咬" -> "https://api.xingzhige.com/API/bite/?qq=$id"
+                    "抓" -> "https://api.xingzhige.com/API/grab/?qq=$id"
+                    "拍拍", "拍瓜", "排" -> "https://api.xingzhige.com/API/paigua/?qq=$id"
+                    "顶球", "顶" -> "https://api.xingzhige.com/API/dingqiu/?qq=$id"
+                    "看看", "看这个" -> "https://api.xingzhige.com/API/Lookatthis/?qq=$id"
+                    "贴贴", "抱抱", "蹭蹭" -> "https://api.xingzhige.com/API/baororo/?qq=$id"
+                    "笑", "笑死" -> "https://api.xingzhige.com/API/LaughTogether/?qq=$id"
+                    else -> ""
+                }.ifEmpty { return }
+                val img = getTempImage("pic.gif")
+                HttpUtil.getResponse(url).body()?.bytes()?.also { byteArray ->
+                    img.writeBytes(byteArray)
+                }.isNull {
+                    group().send("图片获取失败，请稍后再试")
+                    return
+                }
+                if (img.exists()){
+                    send(bot.uploadImage(FileResource(img)))
                 }
             }
         }

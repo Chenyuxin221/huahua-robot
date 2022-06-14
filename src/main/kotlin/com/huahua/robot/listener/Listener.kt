@@ -7,7 +7,7 @@ import com.huahua.robot.entity.Chat
 import com.huahua.robot.entity.Setu
 import com.huahua.robot.entity.Tuizi
 import com.huahua.robot.entity.setu.SetuIcon
-import com.huahua.robot.utils.GlobalVariable
+import com.huahua.robot.utils.FileUtil.getTempImage
 import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
 import com.huahua.robot.utils.UrlUtil
@@ -114,12 +114,7 @@ class Listener {
     suspend fun MessageEvent.showGirls() {
         val url = "https://api.iyk0.com/sjmn"
         val response = HttpUtil.getResponse(url)    // 获取响应体
-        val dir = File("${GlobalVariable.botTemp}\\image")  // 获取临时文件夹
-        if (!dir.exists()) {    // 判断文件夹是否存在
-            log.info("目录创建成功")  // 打印日志
-            dir.mkdirs()    // 创建文件夹
-        }
-        val imgFile = File("${dir.absolutePath}\\girl.jpg") // 获取图片文件
+        val imgFile = getTempImage("girl.jpg") // 获取图片文件
         imgFile.writeBytes(response.body()?.bytes()!!)  //将图片写入本地文件
         val img = bot.uploadImage(FileResource(File(imgFile.absolutePath))) // 上传文件
         val receipt = send(img) // 发送图片并获取标记
