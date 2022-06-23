@@ -296,7 +296,7 @@ class Sender {
          * @return MessageReceipt?  发送结果
          */
         fun sendAdminMsg(messages: Any) = runBlocking {
-            return@runBlocking sendPrivateMsg(RobotCore.ADMINISTRATOR[0], messages)
+            return@runBlocking sendPrivateMsg(RobotCore.ADMINISTRATOR, messages)
         }
     }
 }

@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import love.forte.simbot.LoggerFactory
 import love.forte.simbot.OriginBotManager
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Configuration
 import kotlin.reflect.jvm.jvmName
@@ -19,15 +20,19 @@ import kotlin.reflect.jvm.jvmName
  * @date 2022-05-13 20:19
  */
 @Configuration
-class CmdRunner : CommandLineRunner {
+class CmdRunner constructor(
+    var mapper:PhotoMapper
+) : CommandLineRunner {
 
-    @Autowired(required = false) private lateinit var mapper: PhotoMapper
+
+
     val log = LoggerFactory.getLogger(CmdRunner::class.jvmName)
 
     @Suppress("OPT_IN_USAGE")
     override fun run(vararg args: String?) {
         GlobalVariable.BOT = OriginBotManager.getBot(GlobalVariable.BOTID)
         initGlobalVariable()
+        log.info(RobotCore.ADMINISTRATOR)
         Sender.sendAdminMsg("我好了")
     }
 

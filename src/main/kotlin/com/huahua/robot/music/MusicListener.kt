@@ -65,10 +65,6 @@ class MusicListener {
     suspend fun MessageEvent.music(
         @FilterValue("name") name: String,  // 歌曲名称
     ) {
-        if (GlobalVariable.SKey.isEmpty()) {    // 如果没有登录，则先登录
-            send("正在登录中~请稍后")   // 发送消息
-            userLogin() // 登录
-        }
         val qqMusicState = qqMusic(GlobalVariable.MusicJump, name) //是否有匹配歌曲
         if (!qqMusicState) {    // 如果没有匹配歌曲
             send("QQ音乐未搜索到结果，正在为你跳转至网易云")   // 发送消息

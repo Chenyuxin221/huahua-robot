@@ -262,10 +262,14 @@ class Listener {
             }
         }
         val pic = sendAndWait("请发送图片...", 30, TimeUnit.SECONDS) // 获取图片
-        if (pic is Image<*>) {   // 判断图片是否为图片消息
-            val imgUrl = pic.resource().name   // 获取图片链接
-            send(url + URLEncoder.encode(imgUrl))   // 发送图片链接
-            return  // 跳出方法
+        pic?.messages?.first()?.also {
+            if (it is Image){
+                val imgUrl = it.resource().name   // 获取图片链接
+                send(url + UrlUtil.encode(imgUrl))   // 发送图片链接
+                return  // 跳出方法
+            }
+        }.isNull {
+            return
         }
 
 

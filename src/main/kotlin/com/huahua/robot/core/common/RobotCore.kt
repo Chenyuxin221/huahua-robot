@@ -5,9 +5,9 @@ package com.huahua.robot.core.common
 import com.huahua.robot.core.mapper.GroupBootStateMapper
 import com.huahua.robot.utils.GlobalVariable
 import love.forte.simbot.Bot
-import love.forte.simbot.FragileSimbotApi
 import love.forte.simbot.OriginBotManager
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
@@ -26,7 +26,6 @@ import javax.annotation.PostConstruct
     @Autowired
     lateinit var mapper:GroupBootStateMapper
 
-
     @PostConstruct
     fun init() {
         setApplicationContext()
@@ -44,6 +43,11 @@ import javax.annotation.PostConstruct
             BOOT_MAP[it.groupCode] = it.state
         }
 
+    }
+
+    @Value("\${huahua.account.admin.id}")
+    private fun getAdminId(adminId:String){
+        ADMINISTRATOR = adminId
     }
 
 
@@ -76,10 +80,11 @@ import javax.annotation.PostConstruct
          */
         var THREAD_POOL: ExecutorService? = null
 
+
         /**
          * 机器人管理员
          */
-        val ADMINISTRATOR: List<String> = ArrayList(listOf("1849950046"))
+        var ADMINISTRATOR:String = ""
 
         /**
          * 缓存群开关
