@@ -75,6 +75,8 @@ spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 spring.datasource.url=你的数据库地址
 spring.datasource.username=用户名
 spring.datasource.password=用户密码
+
+huahua.account.admin.id=管理员QQ号
 ```
 
 #### 数据表结构
