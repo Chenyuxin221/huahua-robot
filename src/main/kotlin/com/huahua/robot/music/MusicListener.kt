@@ -44,6 +44,7 @@ class MusicListener {
             "或者输入下载+序号获取下载链接\n" +
             "---------------------\n"   // 列表提示
     private val downloadTip = "下载地址（复制到浏览器下载）：\n"   // 下载提示
+    private val uin = RobotCore.ADMINISTRATOR
 
     /**
      *  登录QQ音乐
@@ -135,7 +136,7 @@ class MusicListener {
         name: String,
     ): Boolean {
         var url =
-            "https://api.klizi.cn/API/music/vipqqyy.php?msg=${name}&uin=1849950046&skey=${GlobalVariable.SKey}"
+            "https://api.klizi.cn/API/music/vipqqyy.php?msg=${name}&uin=${uin}&skey=${GlobalVariable.SKey}"
         val musicList = HttpUtil.getBody(url)   // 获取歌曲列表
         if (listIsContainsName) {   // 判断是否需要跳转
             if (!musicList.contains(name.split(" ")[0])) {    // 判断列表是否包含歌名
@@ -154,7 +155,7 @@ class MusicListener {
                     send("skey失效，请重新登录")  // 发送消息
                     userLogin() // 重新登录
                     url =
-                        "https://api.klizi.cn/API/music/vipqqyy.php?msg=${name}&uin=1849950046&skey=${GlobalVariable.SKey}" // 重新获取url
+                        "https://api.klizi.cn/API/music/vipqqyy.php?msg=${name}&uin=${uin}&skey=${GlobalVariable.SKey}" // 重新获取url
                     music = HttpUtil.getJsonClassFromUrl("${url}&n=${it.toInt()}", QQMusic::class.java).data    // 获取歌曲
                 }
                 when {
