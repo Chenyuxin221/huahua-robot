@@ -15,13 +15,9 @@ class PermissionUtil {
 
 
     /**
-     * 获取成员权限码
-     * @param member GroupMember?   群成员
-     * @return Int
-     * -1：  member为空
-     * 1；   成员
-     * 2：   管理员
-     * 3：   群主
+     * 获取成员权限
+     * @param member GroupMember    成员
+     * @return Permission   权限枚举
      */
     private fun getPermissionCode(member: GroupMember) = runBlocking {
         if (member.isAdmin()) { //判断是否是管理员

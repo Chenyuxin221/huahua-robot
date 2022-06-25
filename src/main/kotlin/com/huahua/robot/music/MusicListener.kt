@@ -3,7 +3,6 @@ package com.huahua.robot.music
 import com.google.gson.Gson
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.RobotCore
-import com.huahua.robot.core.common.Sender.Companion.sendPrivateMsg
 import com.huahua.robot.core.common.isNull
 import com.huahua.robot.core.common.send
 import com.huahua.robot.core.common.sendAndWait
@@ -13,7 +12,6 @@ import com.huahua.robot.music.entity.kugoumusic.music.KugouMusic
 import com.huahua.robot.music.entity.neteasemusic.NeteaseMusic
 import com.huahua.robot.music.entity.qqmusic.QQMusic
 import com.huahua.robot.music.util.Cookie
-import com.huahua.robot.utils.GlobalVariable
 import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.MessageUtil.Companion.getKugouMusicShare
 import com.huahua.robot.utils.MessageUtil.Companion.getNeteaseCloudMusicShare
@@ -21,9 +19,7 @@ import com.huahua.robot.utils.MessageUtil.Companion.getQQMusicShare
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
-import love.forte.simbot.ExperimentalSimbotApi
 import love.forte.simbot.LoggerFactory
-import love.forte.simbot.event.ContinuousSessionContext
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.event.MessageEvent
 import org.springframework.stereotype.Component
@@ -66,7 +62,7 @@ class MusicListener {
     suspend fun MessageEvent.music(
         @FilterValue("name") name: String,  // 歌曲名称
     ) {
-        val qqMusicState = qqMusic(GlobalVariable.MusicJump, name) //是否有匹配歌曲
+        val qqMusicState = qqMusic(RobotCore.MusicJump, name) //是否有匹配歌曲
         if (!qqMusicState) {    // 如果没有匹配歌曲
             send("QQ音乐未搜索到结果，正在为你跳转至网易云")   // 发送消息
             neteaseMusic(name)    // 网易云音乐
@@ -91,7 +87,7 @@ class MusicListener {
             when (kind) {
                 "网易云", "网抑云", "网易" -> neteaseMusic(name)  // 网易云音乐
                 "QQ", "qq", "qq音乐", "QQ音乐" -> { // QQ音乐
-                    if (GlobalVariable.SKey.isEmpty()) {    // 如果没有登录，则先登录
+                    if (RobotCore.Skey.isEmpty()) {    // 如果没有登录，则先登录
                         send("正在登录中~请稍后")   // 发送消息
                         userLogin() // 登录
                     }
@@ -111,14 +107,14 @@ class MusicListener {
      */
     @RobotListen(desc = "是否需要跳转", isBoot = true, permission = RobotPermission.ADMINISTRATOR)
     @Filter("{{state}}自动跳转", matchType = MatchType.REGEX_MATCHES)
-    suspend fun MessageEvent.setMusic(@FilterValue("state") state: String) {
+    suspend fun GroupMessageEvent.setMusic(@FilterValue("state") state: String) {
         if (state == "开启" || state == "设置") {   // 如果开启跳转
-            GlobalVariable.MusicJump = true // 设置跳转为开启
+            RobotCore.MusicJump = true // 设置跳转为开启
             send("自动跳转已开启")  // 发送消息
             return  // 返回
         }
         if (state == "关闭" || state == "取消") {   // 如果关闭跳转
-            GlobalVariable.MusicJump = false    // 设置跳转为关闭
+            RobotCore.MusicJump = false    // 设置跳转为关闭
             send("自动跳转已关闭") // 发送消息
         }
     }
@@ -136,7 +132,7 @@ class MusicListener {
         name: String,
     ): Boolean {
         var url =
-            "https://api.klizi.cn/API/music/vipqqyy.php?msg=${name}&uin=${uin}&skey=${GlobalVariable.SKey}"
+            "https://api.klizi.cn/API/music/vipqqyy.php?msg=${name}&uin=${uin}&skey=${RobotCore.Skey}"
         val musicList = HttpUtil.getBody(url)   // 获取歌曲列表
         if (listIsContainsName) {   // 判断是否需要跳转
             if (!musicList.contains(name.split(" ")[0])) {    // 判断列表是否包含歌名
@@ -155,7 +151,7 @@ class MusicListener {
                     send("skey失效，请重新登录")  // 发送消息
                     userLogin() // 重新登录
                     url =
-                        "https://api.klizi.cn/API/music/vipqqyy.php?msg=${name}&uin=${uin}&skey=${GlobalVariable.SKey}" // 重新获取url
+                        "https://api.klizi.cn/API/music/vipqqyy.php?msg=${name}&uin=${uin}&skey=${RobotCore.Skey}" // 重新获取url
                     music = HttpUtil.getJsonClassFromUrl("${url}&n=${it.toInt()}", QQMusic::class.java).data    // 获取歌曲
                 }
                 when {
@@ -261,8 +257,8 @@ class MusicListener {
         val loginState = Cookie().loginState    // 获取登录状态
         if (loginState.cookies["skey"] != null) {   // 如果有skey
             send( "登录成功~") // 发送消息
-            GlobalVariable.SKey = loginState.cookies["skey"]!!      // 设置skey
-            log.info("获取Skey成功 Skey:${GlobalVariable.SKey}")    // 打印日志
+            RobotCore.Skey = loginState.cookies["skey"]!!      // 设置skey
+            log.info("获取Skey成功 Skey:${RobotCore.Skey}")    // 打印日志
         }
     }
 }

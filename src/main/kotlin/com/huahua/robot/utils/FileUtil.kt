@@ -1,8 +1,10 @@
 package com.huahua.robot.utils
 
 import com.huahua.robot.core.common.RobotCore
+import com.huahua.robot.core.common.isNull
 import org.springframework.core.io.Resource
 import java.io.*
+import java.net.URL
 import java.nio.file.Files
 
 /**
@@ -95,18 +97,48 @@ object FileUtil {
 
     fun Any.getSeparator(): String = File.separator
 
-    fun Any.getTempImage(fileName: String): File {
+    fun String.getTempEmptyImage(): File {
         val path = File(getLocalImagePath())
         if (!path.exists()) {
             path.mkdirs()
         }
-        val file = File(path.absolutePath + getSeparator() + fileName)
+        val file = File(path.absolutePath + getSeparator() + this)
         if (file.exists()) {
             file.delete()
             file.createNewFile()
         }
         return file
     }
+
+    fun String.getTempImage(byteArray: ByteArray?): File? {
+        val file = this.getTempEmptyImage()
+        byteArray?.let {
+            file.writeBytes(it)
+        }.isNull {
+            return null
+        }
+        return file
+    }
+
+    fun String.getTempImage(url: URL): File? {
+        val byteArray = HttpUtil.getResponse(url.toString()).body()?.bytes()
+        return getTempImage(byteArray)
+    }
+
+    /**
+     * 链接字符串转URL
+     * @receiver String 链接字符串
+     * @return URL URL
+     */
+    fun String.url() = URL(this)
+
+    /**
+     * 获得文件
+     * @receiver String 路径
+     * @return File 文件
+     */
+    fun String.toFile() = File(this)
+
 
     fun Any.getLocalPath(): String = getLocalTempPath()
 

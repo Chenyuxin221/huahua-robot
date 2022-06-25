@@ -63,7 +63,7 @@ bot.bot
 }
 ```
 
-### 配置数据库
+### 配置个人数据
 
 在[resources](./src/main/resources/)目录下创建[application.properties]()文件
 
@@ -77,6 +77,14 @@ spring.datasource.username=用户名
 spring.datasource.password=用户密码
 
 huahua.account.admin.id=管理员QQ号
+huahua.account.bot.id=BotQQ号
+huahua.config.boot-command=“启动文件路径”
+```
+
+#### 例：启动文件.bat
+```bat
+@ECHO OFF 
+java -jar "你打包好后的jar包"
 ```
 
 #### 数据表结构
@@ -162,5 +170,6 @@ huahua.account.admin.id=管理员QQ号
 - ### 无法登录提示环境异常 循环验证登不上去
 
 ​		请在手机上打开设备锁，再重新申请验证
+
 
 - ### 不要在*.properties文件里加一些奇奇怪怪的配置项

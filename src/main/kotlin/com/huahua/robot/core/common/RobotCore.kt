@@ -1,10 +1,9 @@
-
 package com.huahua.robot.core.common
 
 
 import com.huahua.robot.core.mapper.GroupBootStateMapper
-import com.huahua.robot.utils.GlobalVariable
 import love.forte.simbot.Bot
+import love.forte.simbot.ID
 import love.forte.simbot.OriginBotManager
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -21,10 +20,10 @@ import javax.annotation.PostConstruct
 @Suppress("unused")
 @Order(1)
 @Component
- class RobotCore {
+class RobotCore {
 
     @Autowired
-    lateinit var mapper:GroupBootStateMapper
+    lateinit var mapper: GroupBootStateMapper
 
     @PostConstruct
     fun init() {
@@ -46,8 +45,18 @@ import javax.annotation.PostConstruct
     }
 
     @Value("\${huahua.account.admin.id}")
-    private fun getAdminId(adminId:String){
+    private fun getAdminId(adminId: String) {
         ADMINISTRATOR = adminId
+    }
+
+    @Value("\${huahua.account.bot.id}")
+    private fun getBotId(botId: String) {
+        BOTID = botId.ID
+    }
+
+    @Value("\${huahua.config.boot-command}")
+    private fun getBootCommandPath(path:String){
+        BOOTCOMMANDPATH = path
     }
 
 
@@ -80,11 +89,36 @@ import javax.annotation.PostConstruct
          */
         var THREAD_POOL: ExecutorService? = null
 
-
         /**
          * 机器人管理员
          */
-        var ADMINISTRATOR:String = ""
+        var ADMINISTRATOR: String = ""
+
+        /**
+         * 主机器人Id
+         */
+        var BOTID: ID = "".ID
+
+        /**
+         * 运行脚本路径
+         */
+        var BOOTCOMMANDPATH:String = ""
+
+        /**
+         * 用户Skey
+         */
+        var Skey = ""
+
+        /**
+         * 写真列表
+         */
+        var PhotoList = arrayListOf<String>()
+
+
+        /**
+         * 点歌是否自动跳转
+         */
+        var MusicJump = true
 
         /**
          * 缓存群开关
@@ -115,11 +149,21 @@ import javax.annotation.PostConstruct
 
         fun getBot(): Bot? {
             @Suppress("OPT_IN_USAGE")
-            return OriginBotManager.getBot(GlobalVariable.BOTID)
+            return OriginBotManager.getBot(BOTID)
         }
     }
 }
+
 inline fun <T> T.isNull(block: () -> Unit): T {
     if (this == null) block()
     return this
 }
+
+inline fun Boolean.then(block: () -> Unit) = this.also { if (this) block() }
+inline operator fun Boolean.invoke(block: () -> Unit) = this.then(block)
+inline fun Boolean?.onElse(block: () -> Unit): Boolean = this.let {
+    it?.not()?.then(block).isNull { block() }
+    it ?: false
+}
+
+inline operator fun Boolean?.minus(block: () -> Unit) = this.onElse(block)

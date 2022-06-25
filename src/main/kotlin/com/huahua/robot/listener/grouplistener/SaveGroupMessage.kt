@@ -26,7 +26,6 @@ class SaveGroupMessage {
     @RobotListen(desc = "消息存储服务")
     suspend fun GroupMessageEvent.saveMessage() {
         val url = "http://127.0.0.1:8080/text/uploadMessage"
-        //nudge无法序列化 故暂时无法存储
         val encodeMessage = MessageUtil().encodeMessage(messageContent.messages)
         val message = Message(
             groupId = group().id.toString(),

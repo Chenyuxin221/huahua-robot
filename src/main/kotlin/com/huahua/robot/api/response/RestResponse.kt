@@ -1,6 +1,5 @@
 package com.huahua.robot.api.response
 
-import com.google.gson.Gson
 import com.huahua.robot.api.enums.RestCode
 import lombok.Data
 

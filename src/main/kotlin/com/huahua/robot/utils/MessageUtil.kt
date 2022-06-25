@@ -1,6 +1,11 @@
+@file:Suppress("unused")
+
 package com.huahua.robot.utils
 
 import com.huahua.robot.core.common.RobotCore
+import com.huahua.robot.core.common.isNull
+import com.huahua.robot.utils.FileUtil.getTempImage
+import com.huahua.robot.utils.FileUtil.url
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
@@ -8,14 +13,13 @@ import love.forte.simbot.ID
 import love.forte.simbot.component.mirai.MiraiComponent
 import love.forte.simbot.component.mirai.message.MiraiMusicShare
 import love.forte.simbot.event.MessageEvent
-import love.forte.simbot.message.At
-import love.forte.simbot.message.Message
-import love.forte.simbot.message.Messages
-import love.forte.simbot.message.ReceivedMessageContent
+import love.forte.simbot.message.*
 import love.forte.simbot.resources.FileResource
 import love.forte.simbot.resources.Resource.Companion.toResource
 import net.mamoe.mirai.message.data.MusicKind
 import java.io.File
+import java.net.URL
+import java.nio.file.Path
 import kotlin.io.path.Path
 
 /**
@@ -58,16 +62,30 @@ class MessageUtil {
             return messageContent.messages.filter { it.key == At.Key }.map { (it as At).target }
         }
 
-        fun getImageMessage(path: String): Message {
-            return runBlocking { RobotCore.getBot()!!.uploadImage(Path(path).toResource()) }
+        private fun getImageMsg(url: String): Message {
+            return runBlocking { RobotCore.getBot()!!.uploadImage(url.url().toResource()) }
         }
 
-        fun getImageMessage(file: File): Message {
+
+        private fun getImageMsg(file: File): Message {
             return runBlocking {
                 RobotCore.getBot()!!.uploadImage(FileResource(file))
             }
         }
 
+        fun String.getImageMessage() = getImageMsg(this)
+
+        fun File.getImageMessage() = getImageMsg(this)
+
+        fun URL.getImageMessage() = runBlocking { RobotCore.getBot()!!.uploadImage(this@getImageMessage.toResource()) }
+
+        fun Path.getImageMessage() = runBlocking { RobotCore.getBot()!!.uploadImage(this@getImageMessage.toResource()) }
+
+        suspend fun String.getTempImageMessage(array: ByteArray): Image<*>? {
+            val file = this.getTempImage(array)
+            file.isNull { return null }
+            return RobotCore.getBot()!!.uploadImage(file!!.toResource())
+        }
 
         /**
          * 获取音乐分享消息
@@ -231,6 +249,7 @@ class MessageUtil {
             musicUrl = musicUrl,
             brief = brief
         )
+
         /**
          * 获取酷狗音乐分享卡片消息
          * @param song String   歌曲名

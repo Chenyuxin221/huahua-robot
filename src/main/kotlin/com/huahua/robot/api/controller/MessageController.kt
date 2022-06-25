@@ -1,13 +1,11 @@
 package com.huahua.robot.api.controller
 
 import com.google.gson.Gson
-
 import com.huahua.robot.api.entity.Message
 import com.huahua.robot.api.mapper.MessageMapper
 import com.huahua.robot.api.response.MessageResponse
 import com.huahua.robot.api.response.MsgResponse
 import love.forte.simbot.LoggerFactory
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 import kotlin.reflect.jvm.jvmName
 
@@ -19,9 +17,10 @@ import kotlin.reflect.jvm.jvmName
  */
 @RestController
 @RequestMapping("text")
-class MessageController {
+class MessageController(
+    val messageMapper: MessageMapper
+) {
 
-    @Autowired lateinit var messageMapper: MessageMapper
     private val log = LoggerFactory.getLogger(MessageController::class.jvmName)
 
     /**

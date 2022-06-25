@@ -2,23 +2,27 @@ package com.huahua.robot.listener.privatelistener
 
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.RobotCore
+import com.huahua.robot.core.common.send
+import com.huahua.robot.core.common.then
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import love.forte.simboot.annotation.Filter
-import love.forte.simboot.annotation.Listener
-import love.forte.simboot.filter.MatchType
+import love.forte.simbot.ID
 import love.forte.simbot.LoggerFactory
 import love.forte.simbot.action.replyIfSupport
 import love.forte.simbot.event.FriendMessageEvent
 import love.forte.simbot.message.Image
 import org.springframework.stereotype.Component
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import kotlin.reflect.jvm.jvmName
 import kotlin.system.exitProcess
 
 @Component
 class PrivateListener {
     val log = LoggerFactory.getLogger(PrivateListener::class.jvmName)
-    @Listener
+    @RobotListen(desc = "图片直链")
     suspend fun FriendMessageEvent.sendImageUrl(){
         messageContent.messages.forEach{
             if (it is Image){
@@ -28,4 +32,71 @@ class PrivateListener {
             }
         }
     }
+
+    @RobotListen(desc = "重启服务")
+    @Filter("重启")
+    suspend fun FriendMessageEvent.restartBot(){
+        (friend().id == RobotCore.ADMINISTRATOR.ID).then {
+            val command = "CMD /C START CMD /K ${RobotCore.BOOTCOMMANDPATH}"
+            Runtime.getRuntime().exec(command)
+            exitProcess(0)
+        }
+    }
+
+    @RobotListen(desc = "系统重启服务")
+    @Filter("重启电脑")
+    suspend fun FriendMessageEvent.restartSystem(){
+        if (friend().id!=RobotCore.ADMINISTRATOR.ID){
+            send("可恶，你自己重开吧")
+            return
+        }
+        if (creatBootLink()){
+            val command = "cmd /c shutdown -r 0"
+            withContext(Dispatchers.IO) {
+                Runtime.getRuntime().exec(command)
+            }
+            send("正在重启系统...")
+            exitProcess(0)
+        }
+    }
+
+
+    private suspend fun FriendMessageEvent.creatBootLink():Boolean{
+        val systemName = System.getProperties().getProperty("os.name").split(" ")[0]
+        if (systemName!="Windows"){
+            send("该功能仅限Windows客户端使用")
+            return false
+        }
+        val startupPath = System.getenv("STARTUP")
+        if (startupPath == null){
+            log.error("请前往配置环境变量，变量名为 STARTUP, 值为系统启动目录")
+            return false
+        }
+        val bootFile = "F:\\botRunner\\bot.bat"
+        val fileName = File(bootFile).name
+        val files = File(startupPath).listFiles()
+        var boolean = false
+        if (files!=null && files.isNotEmpty()){
+            files.forEach {
+                if (it.name==fileName){
+                    boolean = true
+                }
+            }
+        }
+        if (!boolean){
+            val link = Paths.get("${startupPath}\\${fileName}")
+            val file = Paths.get(bootFile)
+            try {
+                withContext(Dispatchers.IO) {
+                    Files.createSymbolicLink(link, file)
+                }
+            }catch (e:java.nio.file.FileSystemException){
+                log.error("用户权限不足！！请前往本地安全策略-用户权限分配-创建符号链接 将EveryOne加入")
+            }catch (e:java.nio.file.FileAlreadyExistsException){
+                log.error("软连接已存在")
+            }
+        }
+        return true
+    }
+
 }

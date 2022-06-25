@@ -3,15 +3,14 @@ package com.huahua.robot.music.util
 import com.huahua.robot.core.common.RobotCore
 import com.huahua.robot.core.common.Sender
 import com.huahua.robot.core.common.logger
-import com.huahua.robot.utils.*
-import com.huahua.robot.utils.FileUtil.getTempImage
-import java.io.File
-import java.io.FileOutputStream
+import com.huahua.robot.utils.FileUtil.getTempEmptyImage
+import com.huahua.robot.utils.HttpUtil
+import com.huahua.robot.utils.MessageUtil.Companion.getImageMessage
+import com.huahua.robot.utils.ResponseEntity
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.ExecutionException
 import java.util.stream.Collectors
-import kotlin.collections.HashMap
 
 /**
  * ClassName: Cookie
@@ -36,7 +35,7 @@ class Cookie {
         val responseEntity: ResponseEntity = HttpUtil.get(String.format(check, uin))
         cookie.putAll(responseEntity.cookies)
         val path = loginQrCode
-        Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR,MessageUtil.getImageMessage(File(path)))
+        Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR,path.getImageMessage())
         isWaitScan = true
         try {
             while (true) {
@@ -53,7 +52,7 @@ class Cookie {
                     return true
                 } else if (response.contains("ptuiCB('65'")) {
                     val imagePath = loginQrCode
-                    Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR, MessageUtil.getImageMessage(imagePath))
+                    Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR, imagePath.getImageMessage())
                 }
             }
         } catch (e: InterruptedException) {
@@ -92,7 +91,7 @@ class Cookie {
             cookie.putAll(responseEntity.cookies)
             cookie["key"] = now
             val bytes: ByteArray = responseEntity.entity
-            val file = getTempImage("QR.png")
+            val file = "QR.png".getTempEmptyImage()
             try {
                 file.outputStream().write(bytes)
             } catch (e: IOException) {

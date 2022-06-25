@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit
 
 
 /**
- * @author wuyou
+ * @author wuyou，花云端
  */
 @Component
 class Sender {
@@ -291,7 +291,7 @@ class Sender {
         }.build()
 
         /**
-         * 给第一个管理员发送消息
+         * 给管理员发送消息
          * @param messages Any  要发送的消息
          * @return MessageReceipt?  发送结果
          */
