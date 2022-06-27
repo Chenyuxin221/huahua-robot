@@ -15,7 +15,9 @@ import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
 import com.huahua.robot.utils.PermissionUtil.Companion.botPermission
 import love.forte.simbot.ID
 import love.forte.simbot.LoggerFactory
+import love.forte.simbot.event.FriendMessageEvent
 import love.forte.simbot.event.GroupMessageEvent
+import love.forte.simbot.event.MessageEvent
 import love.forte.simbot.message.At
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.plus

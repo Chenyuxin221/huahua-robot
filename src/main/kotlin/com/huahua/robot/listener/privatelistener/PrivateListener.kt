@@ -2,6 +2,7 @@ package com.huahua.robot.listener.privatelistener
 
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.RobotCore
+import com.huahua.robot.core.common.isNull
 import com.huahua.robot.core.common.send
 import com.huahua.robot.core.common.then
 import kotlinx.coroutines.Dispatchers
@@ -43,15 +44,25 @@ class PrivateListener {
         }
     }
 
-    @RobotListen(desc = "系统重启服务")
-    @Filter("重启电脑")
+    /**
+     * 慎用！！！
+     * 重启后可能会导致bot失联
+     * 如要使用注意以下几点：
+     *  1、 脚本里切换工作目录到脚本当前目录
+     *  2、 bot自启问题解决：
+     *      1） 移除系统登录密码 使系统开机自动进入桌面
+     *      2） 将脚本添加到win自带计划任务
+     * @receiver FriendMessageEvent
+     */
+//    @RobotListen(desc = "系统重启服务")
+//    @Filter("重启电脑")
     suspend fun FriendMessageEvent.restartSystem(){
         if (friend().id!=RobotCore.ADMINISTRATOR.ID){
             send("可恶，你自己重开吧")
             return
         }
-        if (creatBootLink()){
-            val command = "cmd /c shutdown -r 0"
+        creatBootLink().then{
+            val command = "cmd /c shutdown -r -t 0"
             withContext(Dispatchers.IO) {
                 Runtime.getRuntime().exec(command)
             }
@@ -68,7 +79,7 @@ class PrivateListener {
             return false
         }
         val startupPath = System.getenv("STARTUP")
-        if (startupPath == null){
+        startupPath.isNull {
             log.error("请前往配置环境变量，变量名为 STARTUP, 值为系统启动目录")
             return false
         }
@@ -83,7 +94,7 @@ class PrivateListener {
                 }
             }
         }
-        if (!boolean){
+        boolean.not().then{
             val link = Paths.get("${startupPath}\\${fileName}")
             val file = Paths.get(bootFile)
             try {
