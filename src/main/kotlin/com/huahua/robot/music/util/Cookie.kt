@@ -4,9 +4,11 @@ import com.huahua.robot.core.common.RobotCore
 import com.huahua.robot.core.common.Sender
 import com.huahua.robot.core.common.logger
 import com.huahua.robot.utils.FileUtil.getTempEmptyImage
+import com.huahua.robot.utils.FileUtil.toFile
 import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.MessageUtil.Companion.getImageMessage
 import com.huahua.robot.utils.ResponseEntity
+import java.io.File
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.ExecutionException
@@ -35,7 +37,7 @@ class Cookie {
         val responseEntity: ResponseEntity = HttpUtil.get(String.format(check, uin))
         cookie.putAll(responseEntity.cookies)
         val path = loginQrCode
-        Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR,path.getImageMessage())
+        Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR, path.toFile().getImageMessage())
         isWaitScan = true
         try {
             while (true) {
@@ -52,7 +54,7 @@ class Cookie {
                     return true
                 } else if (response.contains("ptuiCB('65'")) {
                     val imagePath = loginQrCode
-                    Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR, imagePath.getImageMessage())
+                    Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR, imagePath.toFile().getImageMessage())
                 }
             }
         } catch (e: InterruptedException) {

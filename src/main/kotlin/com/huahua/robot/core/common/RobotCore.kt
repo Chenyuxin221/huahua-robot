@@ -118,7 +118,7 @@ class RobotCore {
         /**
          * 点歌是否自动跳转
          */
-        var MusicJump = true
+        var MusicJump = false
 
         /**
          * 缓存群开关

@@ -212,8 +212,7 @@ object HttpUtil {
     fun getBody(url: String): String {
         val client = OkHttpClient() // 创建OkHttpClient对象
         val request = Request.Builder().url(url).build()    // 创建Request对象
-        val result = client.newCall(request).execute().body()   // 获取响应内容
-        return result?.string().toString()  // 返回响应内容
+        return client.newCall(request).execute().body()?.string().toString()
     }
 
     /**

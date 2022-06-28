@@ -161,6 +161,8 @@ class GroupListener {
 
     @RobotListen(isBoot = true, desc = "作图服务-动态图片")
     suspend fun GroupMessageEvent.gifPicture() {
+
+
         messageContent.messages.forEach {
             if (it is At) {
                 val id = it.target
