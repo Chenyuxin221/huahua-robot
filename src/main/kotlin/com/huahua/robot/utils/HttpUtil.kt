@@ -4,10 +4,9 @@ import com.alibaba.fastjson2.JSON
 import com.alibaba.fastjson2.JSONObject
 import com.google.gson.Gson
 import com.huahua.robot.core.common.logger
+import com.huahua.robot.core.common.then
 import io.ktor.http.*
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
+import okhttp3.*
 import org.apache.http.Header
 import org.apache.http.HttpHeaders
 import org.apache.http.client.CookieStore
@@ -181,10 +180,6 @@ object HttpUtil {
         return get { this.url = uri }   // 设置请求地址
     }
 
-    fun post(uri: String): ResponseEntity { // 创建Post请求
-        return post { url = uri }   // 设置请求地址
-    }
-
     fun delete(uri: String): ResponseEntity {   // 创建Delete请求
         return delete { url = uri }   // 设置请求地址
     }
@@ -225,13 +220,74 @@ object HttpUtil {
         return Gson().fromJson(getBody(url), clazz)  // 从返回json字符串的网址中获取json对象
     }
 
+    /**
+     * 发送post请求
+     * @param url String    网址
+     * @param map HashMap<String, Any>  参数
+     * @param type PostType 参数类型
+     * @return String?  返回结果
+     */
+    fun post(url: String, map: HashMap<String, Any>, type: PostType) = when (type) {
+            PostType.DATA -> postOfData(url, map)
+            PostType.JSON -> postOfJson(url, map)
+        }
+
+
+    /**
+     * 发送from-data类型的post请求
+     * @param url String    网址
+     * @param map HashMap<String, Any>  参数
+     * @return String?  返回结果
+     */
+    private fun postOfData(url: String, map: HashMap<String, Any>): String? {
+        val builder = MultipartBody.Builder()
+        MediaType.parse(PostType.DATA.value)?.let { builder.setType(it) }
+        map.isNotEmpty().then {
+            map.forEach { (k, v) ->
+                builder.addFormDataPart(k, v.toString())
+            }
+        }
+        val requestBody = builder.build()
+        val client = OkHttpClient()
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .build()
+        val response = client.newCall(request).execute()
+        return response.body()?.string()
+    }
+
+    /**
+     * 发送json格式的请求
+     * @param url String    网址
+     * @param map HashMap<String, Any>  参数
+     * @return String?  返回结果
+     */
+    private fun postOfJson(url: String, map: HashMap<String, Any>): String? {
+        val jb = JSONObject()
+        map.isNotEmpty().let {
+            map.forEach { (k, v) ->
+                jb.put(k, v)
+            }
+        }
+        val requestBody = RequestBody.create(MediaType.parse(PostType.JSON.value), jb.toJSONString())
+        val client = OkHttpClient()
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .build()
+        val response = client.newCall(request).execute()
+        return response.body()?.string()
+    }
+
 
     /**
      * 获取网页返回请求体
      * @param url String    网址
      * @return Response 返回体
      */
-    fun getResponse(url: String): Response = OkHttpClient().newCall(Request.Builder().url(url).build()).execute() // 获取网页返回请求体
+    fun getResponse(url: String): Response =
+        OkHttpClient().newCall(Request.Builder().url(url).build()).execute() // 获取网页返回请求体
 
 
 }
@@ -287,5 +343,22 @@ class ResponseEntity {
     }
 
     fun getJSONResponse(): JSONObject? = if (response.isBlank()) null else JSON.parseObject(response) // 返回响应内容的json对象
+}
+
+/**
+ * 请求的数据类型
+ * @property value String   数据类型的值
+ * @constructor 创建数据类型
+ */
+enum class PostType(val value: String) {
+    /**
+     * application/json
+     */
+    JSON("application/json"),
+
+    /**
+     * multipart/form-data
+     */
+    DATA("multipart/form-data")
 
 }

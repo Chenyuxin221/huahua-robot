@@ -1,5 +1,6 @@
 package com.huahua.robot.listener.grouplistener
 
+import com.alibaba.fastjson2.JSON
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.RobotCore
 import com.huahua.robot.core.common.isNull
@@ -9,15 +10,15 @@ import com.huahua.robot.core.enums.RobotPermission
 import com.huahua.robot.entity.LuckyTime
 import com.huahua.robot.utils.FileUtil.getTempImage
 import com.huahua.robot.utils.FileUtil.url
+import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.MessageUtil.Companion.getImageMessage
 import com.huahua.robot.utils.Permission
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
 import com.huahua.robot.utils.PermissionUtil.Companion.botPermission
+import com.huahua.robot.utils.PostType
 import love.forte.simbot.ID
 import love.forte.simbot.LoggerFactory
-import love.forte.simbot.event.FriendMessageEvent
 import love.forte.simbot.event.GroupMessageEvent
-import love.forte.simbot.event.MessageEvent
 import love.forte.simbot.message.At
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.plus
@@ -110,7 +111,6 @@ class GroupListener {
     @RobotListen(isBoot = true, desc = "作图服务")
     suspend fun GroupMessageEvent.picture() {
         val msg = messageContent.plainText.trim()   // 获取消息内容
-
         messageContent.messages.forEach {
             (it is At).then {
                 val atId = (it as At).target
@@ -127,6 +127,7 @@ class GroupListener {
                     }.also { str ->
                         str.isNotEmpty().then {
                             send(At(author().id) + (" $str").toText())
+                            return
                         }
                     }
                 }
@@ -161,8 +162,6 @@ class GroupListener {
 
     @RobotListen(isBoot = true, desc = "作图服务-动态图片")
     suspend fun GroupMessageEvent.gifPicture() {
-
-
         messageContent.messages.forEach {
             if (it is At) {
                 val id = it.target
@@ -185,6 +184,88 @@ class GroupListener {
                     }?.delete()
                 }
             }
+        }
+    }
+
+    @RobotListen(isBoot = true, desc = "小短句")
+    suspend fun GroupMessageEvent.shortSentence() {
+        val msg = messageContent.plainText.trim()
+        val url = "https://api.xingzhige.com/API/cp_generate/"
+        val params = hashMapOf<String, Any>()
+        val atList = mutableListOf<ID>()
+        messageContent.messages.forEach {
+            if (it is At) {
+                atList.add(it.target)
+            }
+        }
+        log.info("AT数量 ：${atList.size}")
+        when (atList.size) {
+            1 -> {
+                var atName = group().member(atList[0])!!.nickOrUsername
+                var autherName = author().nickOrUsername
+                if (atName.length > 6) atName = group().member(atList[0])!!.username
+                if (autherName.length > 6) autherName = author().username
+                if (atName.length > 6) atName = atName.substring(0, 6)
+                if (autherName.length > 6) autherName = autherName.substring(0, 6)
+                when (msg) {
+                    "嗑" -> {
+                        if (atList[0] == RobotCore.ADMINISTRATOR.ID) {
+                            val admin = group().member(RobotCore.ADMINISTRATOR.ID)
+                            var adminName = admin!!.nickOrUsername
+                            if (adminName.length > 6) adminName = admin.username
+                            if (adminName.length > 6) adminName = adminName.substring(0, 6)
+                            params["g"] = group().member(RobotCore.ADMINISTRATOR.ID)!!.nickOrUsername
+                            params["s"] = autherName
+                        } else {
+                            params["g"] = autherName
+                            params["s"] = atName
+                        }
+                    }
+                }
+            }
+            2 -> {
+                var name1 = group().member(atList[0])!!.nickOrUsername
+                var name2 = group().member(atList[1])!!.nickOrUsername
+                if (name1.length > 6) name1 = group().member(atList[0])!!.username
+                if (name2.length > 6) name2 = group().member(atList[1])!!.username
+                if (name1.length > 6) name1 = name1.substring(0, 6)
+                if (name2.length > 6) name2 = name2.substring(0, 6)
+                when (msg) {
+                    "嗑" -> {
+                        when {
+                            atList[0] == RobotCore.ADMINISTRATOR.ID -> {
+                                params["g"] = name2
+                                params["s"] = author().nickOrUsername
+                            }
+                            atList[1] == RobotCore.ADMINISTRATOR.ID -> {
+                                params["g"] = name1
+                                params["s"] = author().nickOrUsername
+                            }
+                            atList[0] == atList[1] -> {
+                                send("不能和自己嗑")
+                            }
+                            else ->{
+                                params["g"] = name1
+                                params["s"] = name2
+                            }
+                        }
+                    }
+                }
+            }
+            3 -> send("不支持多人运动")
+        }
+        if (params.isEmpty()) {
+            return
+        }
+        val result = HttpUtil.post(url, params, PostType.DATA)
+        println(JSON.parseObject(result).toJSONString())
+        val code = JSON.parseObject(result).getInteger("code")
+        if (code == 0) {
+            val data = JSON.parseObject(result).getString("data")
+            val reply = JSON.parseObject(data).getString("msg")
+            send(reply)
+        } else {
+            send("请求失败，请稍后再试")
         }
     }
 }

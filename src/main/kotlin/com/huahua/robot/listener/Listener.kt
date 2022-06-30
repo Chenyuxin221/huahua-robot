@@ -31,7 +31,9 @@ import love.forte.simbot.message.*
 import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.concurrent.timerTask
 import kotlin.reflect.jvm.jvmName
+import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.minutes
 
 
@@ -256,8 +258,27 @@ class Listener {
         }.isNull {
             return
         }
+    }
 
-
+    @RobotListen(desc = "结束程序")
+    @Filter("退出", matchType = MatchType.TEXT_CONTAINS)
+    suspend fun MessageEvent.exit() {
+        when (this) {
+            is GroupMessageEvent -> {
+                if (author().id == RobotCore.ADMINISTRATOR.ID) {
+                    send("5s后结束程序...")
+                    delay(5000)
+                    exitProcess(0)
+                }
+            }
+            is FriendMessageEvent -> {
+                if (friend().id == RobotCore.ADMINISTRATOR.ID) {
+                    send("5s后结束程序...")
+                    delay(5000)
+                    exitProcess(0)
+                }
+            }
+        }
     }
 
     /**

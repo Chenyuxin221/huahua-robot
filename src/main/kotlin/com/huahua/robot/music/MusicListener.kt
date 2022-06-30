@@ -1,11 +1,12 @@
+@file:Suppress("unused")
+
 package com.huahua.robot.music
 
+import com.alibaba.fastjson2.JSON
+import com.alibaba.fastjson2.JSONObject
 import com.google.gson.Gson
 import com.huahua.robot.core.annotation.RobotListen
-import com.huahua.robot.core.common.RobotCore
-import com.huahua.robot.core.common.isNull
-import com.huahua.robot.core.common.send
-import com.huahua.robot.core.common.sendAndWait
+import com.huahua.robot.core.common.*
 import com.huahua.robot.core.enums.RobotPermission
 import com.huahua.robot.music.entity.kugoumusic.list.MusicList
 import com.huahua.robot.music.entity.kugoumusic.music.KugouMusic
@@ -13,9 +14,11 @@ import com.huahua.robot.music.entity.neteasemusic.NeteaseMusic
 import com.huahua.robot.music.entity.qqmusic.QQMusic
 import com.huahua.robot.music.util.Cookie
 import com.huahua.robot.utils.HttpUtil
+import com.huahua.robot.utils.MessageUtil
 import com.huahua.robot.utils.MessageUtil.Companion.getKugouMusicShare
 import com.huahua.robot.utils.MessageUtil.Companion.getNeteaseCloudMusicShare
 import com.huahua.robot.utils.MessageUtil.Companion.getQQMusicShare
+import com.huahua.robot.utils.PostType
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
@@ -41,6 +44,7 @@ class MusicListener {
             "---------------------\n"   // 列表提示
     private val downloadTip = "下载地址（复制到浏览器下载）：\n"   // 下载提示
     private val uin = RobotCore.ADMINISTRATOR
+    private val skey = RobotCore.Skey
 
     /**
      *  登录QQ音乐
@@ -62,10 +66,13 @@ class MusicListener {
     suspend fun MessageEvent.music(
         @FilterValue("name") name: String,  // 歌曲名称
     ) {
-        val qqMusicState = qqMusic(RobotCore.MusicJump, name) //是否有匹配歌曲
-        if (!qqMusicState) {    // 如果没有匹配歌曲
-            send("QQ音乐未搜索到结果，正在为你跳转至网易云")   // 发送消息
-            neteaseMusic(name)    // 网易云音乐
+        val boolean = qqMusic1(name)    //  第一次点歌结果
+        boolean.not().then {    //  点歌失败
+            val qqMusicState = qqMusic(RobotCore.MusicJump, name) //尝试使用另一个
+            qqMusicState.not().then {   // 第二次点歌失败
+                send("QQ音乐未搜索到结果，正在为你跳转至网易云")   // 发送消息
+                neteaseMusic(name)    // 跳转至网易云音乐
+            }
         }
     }
 
@@ -87,13 +94,16 @@ class MusicListener {
             when (kind) {
                 "网易云", "网抑云", "网易" -> neteaseMusic(name)  // 网易云音乐
                 "QQ", "qq", "qq音乐", "QQ音乐" -> { // QQ音乐
-                    if (RobotCore.Skey.isEmpty()) {    // 如果没有登录，则先登录
-                        send("正在登录中~请稍后")   // 发送消息
-                        userLogin() // 登录
+                    val boolean = qqMusic1(name)    // QQ音乐1
+                    boolean.not().then {
+                        if (RobotCore.Skey.isEmpty()) {    // 如果没有登录，则先登录
+                            send("正在登录中~请稍后")   // 发送消息
+                            userLogin() // 登录
+                        }
+                        qqMusic(false, name)  // QQ音乐
                     }
-                    qqMusic(false, name)  // QQ音乐
                 }
-                "酷狗","kugou","kg","KG" -> kugouMusic(name)
+                "酷狗", "kugou", "kg", "KG" -> kugouMusic(name)
                 else -> return  // 如果没有匹配到渠道，则返回
             }
         }
@@ -132,7 +142,7 @@ class MusicListener {
         name: String,
     ): Boolean {
         var url =
-            "https://api.klizi.cn/API/music/vipqqyy.php?msg=${name}&uin=${uin}&skey=${RobotCore.Skey}"
+            "https://api.klizi.cn/API/music/vipqqyy.php?msg=${name}&uin=${uin}&skey=${skey}"
         val musicList = HttpUtil.getBody(url)   // 获取歌曲列表
         if (listIsContainsName) {   // 判断是否需要跳转
             if (!musicList.contains(name.split(" ")[0])) {    // 判断列表是否包含歌名
@@ -146,12 +156,12 @@ class MusicListener {
         val text = sendAndWait("${musicList}${listTip}", 30, TimeUnit.SECONDS, Regex(pattern))?.plainText   // 发送消息并等待回复
         text?.also { // 如果不为空
             Regex(pattern).find(text)?.groups?.get(1)?.value?.let { // 如果不为空
-                var music = Gson().fromJson(HttpUtil.getBody("${url}&n=${it.toInt()}"), QQMusic::class.java).data   // 获取歌曲
+                var music =HttpUtil.getJsonClassFromUrl("${url}&n=${it.toInt()}", QQMusic::class.java).data   // 获取歌曲
                 if (music.music.isEmpty()) {    // 如果歌曲为空
                     send("skey失效，请重新登录")  // 发送消息
                     userLogin() // 重新登录
                     url =
-                        "https://api.klizi.cn/API/music/vipqqyy.php?msg=${name}&uin=${uin}&skey=${RobotCore.Skey}" // 重新获取url
+                        "https://api.klizi.cn/API/music/vipqqyy.php?msg=${name}&uin=${uin}&skey=${skey}" // 重新获取url
                     music = HttpUtil.getJsonClassFromUrl("${url}&n=${it.toInt()}", QQMusic::class.java).data    // 获取歌曲
                 }
                 when {
@@ -176,6 +186,80 @@ class MusicListener {
         return false
     }
 
+    private suspend fun MessageEvent.qqMusic1(name: String): Boolean {
+        val url = "https://api.xingzhige.com/API/QQmusicVIP/"
+        val params = hashMapOf<String, Any>()
+        params["name"] = name
+        params["mode"] = "QR"
+        params["type"] = "json"
+        val list = getQQMusicList(url, params)
+        val musicList = list + listTip
+        val pattern = """^(?:下载|播放)?\s*(\d*)$"""
+        val text = sendAndWait(musicList, 30, TimeUnit.SECONDS, Regex(pattern))?.plainText   // 发送消息并等待回复
+        text?.also {
+            Regex(pattern).find(text)?.groups?.get(1)?.value?.let {
+                params["n"] = it.toInt()
+                val result = HttpUtil.post(url, params, PostType.DATA)
+                val jb = JSON.parseObject(result)
+                val musicInfo: JSONObject?
+                when ((jb.get("code") as Int)) {  //判断状态码
+                    0 -> {
+                        musicInfo = JSON.parseObject(jb["data"].toString())
+                    }
+                    -101 -> {
+                        send("skey失效，请重新登录")
+                        userLogin()
+                        params["uin"] = uin
+                        params["skey"] = skey
+                        val result1 = HttpUtil.post(url, params, PostType.DATA)
+                        musicInfo = JSON.parseObject(JSON.parseObject(result1)["data"].toString())
+                    }
+                    -201 -> {
+                        send("无搜索结果...正在切换")
+                        return false
+                    }
+                    -200 -> {
+                        send("搜索失败...正在切换")
+                        return false
+                    }
+                    else -> {
+                        send("未知错误...正在切换")
+                        return false
+                    }
+                }
+                musicInfo?.also { js ->
+                    log.info(js.toJSONString())
+                    val musicShare = MessageUtil.getQQMusicShare(
+                        song = js.getString("songname"),
+                        singer = js.getString("name"),
+                        jumpUrl = js.getString("songurl"),
+                        picture = js.getString("cover"),
+                        musicUrl = js.getString("src")
+                    )
+                    send(musicShare)
+                }.isNull {
+                    send("搜索失败...正在切换")
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
+    private fun getQQMusicList(url: String, params: HashMap<String, Any>): String {
+        val listResult = HttpUtil.post(url, params, PostType.DATA)
+        val jb = JSON.parseObject(listResult)
+        val list = jb.get("data") as List<*>
+        val sb = StringBuilder()
+        var num = 1
+        list.forEach {
+            val js = JSON.parseObject(it.toString())
+            sb.append("${num}、").append(js["songname"]).append("-").append(js["name"]).append("\n")
+            num+=1
+        }
+        return sb.toString()
+    }
+
     /**
      * 网易云音乐功能
      * @receiver MessageEvent   消息事件
@@ -183,14 +267,15 @@ class MusicListener {
      * @return Boolean  没用
      */
     private suspend fun MessageEvent.neteaseMusic(
-        name: String
+        name: String,
     ): Boolean {
 
         val url = "https://api.klizi.cn/API/music/netease.php?msg=$name"
         val response = HttpUtil.getBody(url)    // 获取歌曲列表
         val musicList = response.substring(0, response.length - 12).trim()  // 获取歌曲列表
-        if (musicList.isEmpty()||musicList==" ") {   // 如果歌曲列表为空
+        if (musicList.isEmpty() || musicList == " " || musicList.contains("搜索不到")) {   // 如果歌曲列表为空
             send("没有找到相关歌曲") // 发送消息
+            return false
         }
         val pattern = """^(?:下载|播放)?\s*(\d*)$"""    // 正则表达式
         val text = sendAndWait("${musicList}${listTip}", 30, TimeUnit.SECONDS, Regex(pattern))?.plainText   // 发送消息并等待回复
@@ -218,19 +303,19 @@ class MusicListener {
         return true // 暂时没用
     }
 
-    private suspend fun MessageEvent.kugouMusic(name: String){
+    private suspend fun MessageEvent.kugouMusic(name: String) {
         val url = "https://ovooa.com/API/kgdg/api.php?msg=$name"
-        val list = HttpUtil.getJsonClassFromUrl(url,MusicList::class.java)
-        if (list.code != 1){
+        val list = HttpUtil.getJsonClassFromUrl(url, MusicList::class.java)
+        if (list.code != 1) {
             send(list.text)
             return
         }
-        val ls= "${list.data.joinToString("\n") { "${it.name} --${it.singer}" }}\n$listTip"
+        val ls = "${list.data.joinToString("\n") { "${it.name} --${it.singer}" }}\n$listTip"
         val pattern = """^(?:下载|播放)?\s*(\d*)$"""
-        val text = sendAndWait(ls,30,TimeUnit.SECONDS,Regex(pattern))?.plainText
+        val text = sendAndWait(ls, 30, TimeUnit.SECONDS, Regex(pattern))?.plainText
         text?.also {
             Regex(pattern).find(text)?.groups?.get(1)?.value?.let {
-                val music = HttpUtil.getJsonClassFromUrl("${url}&n=${it.toInt()}",KugouMusic::class.java)
+                val music = HttpUtil.getJsonClassFromUrl("${url}&n=${it.toInt()}", KugouMusic::class.java)
                 when {
                     text.startsWith("下载") -> send("${downloadTip}${music.data.url}")
                     else -> {
@@ -256,7 +341,7 @@ class MusicListener {
     private suspend fun MessageEvent.userLogin() {
         val loginState = Cookie().loginState    // 获取登录状态
         if (loginState.cookies["skey"] != null) {   // 如果有skey
-            send( "登录成功~") // 发送消息
+            send("登录成功~") // 发送消息
             RobotCore.Skey = loginState.cookies["skey"]!!      // 设置skey
             log.info("获取Skey成功 Skey:${RobotCore.Skey}")    // 打印日志
         }
