@@ -114,6 +114,11 @@ class RobotCore {
          */
         var PhotoList = arrayListOf<String>()
 
+        /**
+         * 是否回复过消息
+         */
+        var HaveReplied = hashMapOf<ID,Boolean>()
+
 
         /**
          * 点歌是否自动跳转

@@ -31,7 +31,6 @@ import love.forte.simbot.message.*
 import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.concurrent.timerTask
 import kotlin.reflect.jvm.jvmName
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.minutes
@@ -296,6 +295,7 @@ class Listener {
         val reply = HttpUtil.getJsonClassFromUrl(url, Chat::class.java).text    // 获取回复内容
         when (this) {
             is GroupMessageEvent -> {
+                RobotCore.HaveReplied[author().id] ?: return
                 (reply.isEmpty()).then {
                     (group().id == "1043409458".ID).then {
                         send(At("2984131619".ID) + " $msg".toText())

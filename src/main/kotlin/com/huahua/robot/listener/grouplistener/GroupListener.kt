@@ -128,6 +128,7 @@ class GroupListener {
                     }.also { str ->
                         str.isNotEmpty().then {
                             send(At(author().id) + (" $str").toText())
+                            RobotCore.HaveReplied[author().id] = true
                             return
                         }
                     }
