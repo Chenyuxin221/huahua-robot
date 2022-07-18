@@ -157,7 +157,7 @@ class MusicListener {
         text?.also { // 如果不为空
             Regex(pattern).find(text)?.groups?.get(1)?.value?.let { // 如果不为空
                 var music =HttpUtil.getJsonClassFromUrl("${url}&n=${it.toInt()}", QQMusic::class.java).data   // 获取歌曲
-                if (music.music.isEmpty()) {    // 如果歌曲为空
+                if (music!=null &&music.music.isEmpty()) {    // 如果歌曲为空
                     send("skey失效，请重新登录")  // 发送消息
                     userLogin() // 重新登录
                     url =
@@ -193,6 +193,9 @@ class MusicListener {
         params["mode"] = "QR"
         params["type"] = "json"
         val list = getQQMusicList(url, params)
+        if (list.contains("搜素失败")) {
+            return false
+        }
         val musicList = list + listTip
         val pattern = """^(?:下载|播放)?\s*(\d*)$"""
         val text = sendAndWait(musicList, 30, TimeUnit.SECONDS, Regex(pattern))?.plainText   // 发送消息并等待回复
@@ -215,6 +218,7 @@ class MusicListener {
                         musicInfo = JSON.parseObject(JSON.parseObject(result1)["data"].toString())
                     }
                     -201 -> {
+                        println(jb.toJSONString())
                         send("无搜索结果...正在切换")
                         return false
                     }
@@ -249,12 +253,20 @@ class MusicListener {
     private fun getQQMusicList(url: String, params: HashMap<String, Any>): String {
         val listResult = HttpUtil.post(url, params, PostType.DATA)
         val jb = JSON.parseObject(listResult)
+        jb.isNull {
+            log.error(jb.toJSONString())
+            return "搜索失败,请稍后重试"
+        }
+        (jb.getIntValue("code") == -201).then {
+            log.error(jb.toJSONString())
+            return "搜索失败,无搜索结果"
+        }
         val list = jb.get("data") as List<*>
         val sb = StringBuilder()
         var num = 1
         list.forEach {
             val js = JSON.parseObject(it.toString())
-            sb.append("${num}、").append(js["songname"]).append("-").append(js["name"]).append("\n")
+            sb.append("${num}、").append(js.getString("songname")).append("-").append(js.getString("name")).append("\n")
             num+=1
         }
         return sb.toString()

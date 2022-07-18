@@ -16,6 +16,7 @@ import com.huahua.robot.utils.Permission
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
 import com.huahua.robot.utils.PermissionUtil.Companion.botPermission
 import com.huahua.robot.utils.PostType
+import love.forte.simboot.annotation.Filter
 import love.forte.simbot.ID
 import love.forte.simbot.LoggerFactory
 import love.forte.simbot.event.GroupMessageEvent
@@ -158,6 +159,16 @@ class GroupListener {
                 }
             }
         }
+    }
+    @RobotListen(desc = "点赞功能", isBoot = true)
+    @Filter("赞我")
+    suspend fun GroupMessageEvent.praiseMe(){
+        val url = "https://api.klizi.cn/API/ce/zan.php?qq=${author().id}"
+        "praiseMe.jpg".getTempImage(url.url())?.also {
+            send(it.getImageMessage())
+        }.isNull {
+            send("图片获取失败，请稍后再试")
+        }?.delete()
     }
 
     @RobotListen(isBoot = true, desc = "作图服务-动态图片")
