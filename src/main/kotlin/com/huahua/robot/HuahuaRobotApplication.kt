@@ -1,9 +1,9 @@
 package com.huahua.robot
 
-
 import love.forte.simboot.spring.autoconfigure.EnableSimbot
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+
 
 @EnableSimbot
 @SpringBootApplication

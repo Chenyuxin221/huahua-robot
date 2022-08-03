@@ -11,7 +11,7 @@ import java.net.URLEncoder
  * @date 2022-02-20 20:48
  */
 object UrlUtil {
-    private val encode = "GBK"
+    private val encode = "utf-8"
 
     /**
      * 对URL编码后的中文字符串进行解吗

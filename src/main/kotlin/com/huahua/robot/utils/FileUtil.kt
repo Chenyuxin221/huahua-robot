@@ -1,11 +1,9 @@
 package com.huahua.robot.utils
 
-import com.huahua.robot.core.common.RobotCore
 import com.huahua.robot.core.common.isNull
-import org.springframework.core.io.Resource
-import java.io.*
+import love.forte.simbot.LoggerFactory
+import java.io.File
 import java.net.URL
-import java.nio.file.Files
 
 /**
  * ClassName: FileUtil
@@ -15,65 +13,7 @@ import java.nio.file.Files
  */
 object FileUtil {
     private val temp = "${System.getProperty("user.home")}${getSeparator()}.huahuabot${getSeparator()}"
-    fun saveFile(path: String, fileName: String, byteArray: ByteArray) {
-        createDir(path)
-        File(fileName).writeBytes(byteArray)
-    }
-
-    fun createDir(path: String) {
-        val dir = File(path)
-        if (!dir.exists()) {
-            dir.mkdirs()
-        }
-    }
-
-    @Throws(IOException::class)
-    fun saveTempFile(inputStream: InputStream?, fileName: String?, folderName: String): String {
-        val tempDir = File(RobotCore.TEMP_PATH + folderName + File.separator)
-        val temp = File(RobotCore.TEMP_PATH + folderName + File.separator + fileName)
-        if (!tempDir.exists() && !tempDir.mkdirs()) {
-            throw IOException("Destination '$tempDir' directory cannot be created")
-        }
-        if (!tempDir.canWrite()) {
-            throw IOException("Destination '$tempDir' cannot be written to")
-        }
-        if (inputStream != null) {
-            BufferedInputStream(inputStream).use { bis ->
-                BufferedOutputStream(Files.newOutputStream(temp.toPath())).use { bos ->
-                    var len: Int
-                    val buf = ByteArray(10240)
-                    while (bis.read(buf).also { len = it } != -1) {
-                        bos.write(buf, 0, len)
-                    }
-                    bos.flush()
-                }
-            }
-        }
-        return temp.path
-    }
-
-    /**
-     * 将resource文件保存到临时路径
-     *
-     * @param resource   resource文件
-     * @param folderName 文件夹名
-     * @throws IOException IOException
-     */
-    @Suppress("unused")
-    @Throws(IOException::class)
-    fun saveResourceToTempDirectory(resource: Resource, folderName: String) {
-        saveTempFile(resource.inputStream, resource.filename, folderName)
-    }
-
-    /**
-     * 判断文件是否存在
-     *
-     * @param path 文件路径
-     * @return 如果存在返回true
-     */
-    fun exist(path: String?): Boolean {
-        return null != path && File(path).exists()
-    }
+    private val log = LoggerFactory.getLogger(FileUtil::class.java)
 
     private fun getLocalTempPath(): String {
         val str = "attrib +H \"$temp\""
@@ -85,24 +25,21 @@ object FileUtil {
         return localDir.absolutePath + getSeparator()
     }
 
-    private fun getLocalImagePath(): String {
-        val pathStr = getLocalPath() + "image" + getSeparator()
+    private fun getLocalFilePath(type: FileType): String {
+        val pathStr = getLocalPath() + type.value + getSeparator()
         val path = File(pathStr)
         if (!path.exists()) {
             path.mkdirs()
         }
-
         return path.absolutePath + getSeparator()
     }
 
-    fun Any.getSeparator(): String = File.separator
-
-    fun String.getTempEmptyImage(): File {
-        val path = File(getLocalImagePath())
+    private fun getTempEmptyFile(name: String, type: FileType): File {
+        val path = File(getLocalFilePath(type))
         if (!path.exists()) {
             path.mkdirs()
         }
-        val file = File(path.absolutePath + getSeparator() + this)
+        val file = File(path.absolutePath + getSeparator() + name)
         if (file.exists()) {
             file.delete()
             file.createNewFile()
@@ -110,8 +47,8 @@ object FileUtil {
         return file
     }
 
-    fun String.getTempImage(byteArray: ByteArray?): File? {
-        val file = this.getTempEmptyImage()
+    private fun String.getTempFile(byteArray: ByteArray?, type: FileType): File? {
+        val file = getTempEmptyFile(this, type)
         byteArray?.let {
             file.writeBytes(it)
         }.isNull {
@@ -120,10 +57,97 @@ object FileUtil {
         return file
     }
 
-    fun String.getTempImage(url: URL): File? {
+    private fun String.getTempFile(url: URL, type: FileType): File? {
+        val file = getTempEmptyFile(this, type)
         val byteArray = HttpUtil.getResponse(url.toString()).body()?.bytes()
-        return getTempImage(byteArray)
+        byteArray?.let {
+            file.writeBytes(it)
+        }.isNull {
+            return null
+        }
+        return file
     }
+
+    private fun deleteFile(file: File){
+        if(!file.exists()){
+            log.debug("文件删除失败，请检查路径是否正确")
+            return
+        }
+        val files = file.listFiles()
+        for (f in files!!) {
+            if (f.isDirectory){
+                deleteFile(f)
+            }else{
+                f.delete()
+            }
+        }
+    }
+
+    /**
+     * 清空文件夹
+     * @param file File 文件夹路径
+     */
+    fun File.clearDirectory() = deleteFile(this)
+
+
+
+    /**
+     * 保存文件到指定目录
+     * @receiver String 文件名
+     * @param path String   目录
+     * @param url URL   网络地址
+     * @return File?    文件
+     */
+    fun String.getTempFile(path: String, url: URL): File? {
+        val dir = File(path)
+        if (!dir.isDirectory) {
+            return null
+        }
+        val file = File(path + getSeparator() + this)
+        HttpUtil.getResponse(url.toString()).body()?.bytes()?.let {
+            file.writeBytes(it)
+        }.isNull {
+            return null
+        }
+        return file
+    }
+
+    fun imagePath() = getLocalFilePath(FileType.IMAGE)
+
+    /**
+     * 保存并获取本地图片
+     * @receiver String 文件全名
+     * @param byteArray ByteArray?  字符流
+     * @return File?    文件
+     */
+    fun String.getTempImage(byteArray: ByteArray?) = this.getTempFile(byteArray, FileType.IMAGE)
+
+    /**
+     * 保存并获取本地图片
+     * @receiver String 文件全名
+     * @param url URL   网络图片地址
+     * @return File?    文件
+     */
+    fun String.getTempImage(url: URL) = this.getTempFile(url, FileType.IMAGE)
+
+
+    /**
+     * 保存并获取本地音乐
+     * @receiver String 文件全名
+     * @param byteArray ByteArray?
+     * @return File?
+     */
+    fun String.getTempMusic(byteArray: ByteArray?) = this.getTempFile(byteArray, FileType.MUSIC)
+
+    /**
+     * 保存并获取本地音乐
+     * @receiver String 文件全名
+     * @param url URL   网络文件地址
+     * @return File?    文件
+     */
+    fun String.getTempMusic(url: URL) = this.getTempFile(url, FileType.MUSIC)
+    fun String.getTempEmptyImage() = getTempEmptyFile(this, FileType.IMAGE)
+    fun Any.getSeparator(): String = File.separator
 
     /**
      * 链接字符串转URL
@@ -142,4 +166,11 @@ object FileUtil {
 
     fun Any.getLocalPath(): String = getLocalTempPath()
 
+}
+
+enum class FileType(val value: String) {
+    IMAGE("image"),
+    MUSIC("music"),
+    VIDEO("video"),
+    OTHER_TYPES("file")
 }

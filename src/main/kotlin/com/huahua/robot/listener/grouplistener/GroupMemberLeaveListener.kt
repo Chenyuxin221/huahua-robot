@@ -2,6 +2,7 @@ package com.huahua.robot.listener.grouplistener
 
 
 import com.huahua.robot.core.annotation.RobotListen
+import love.forte.di.annotation.Beans
 import love.forte.simbot.component.mirai.event.MiraiMemberLeaveEvent
 import org.springframework.stereotype.Component
 
@@ -11,7 +12,7 @@ import org.springframework.stereotype.Component
  * @author 花云端
  * @date 2022-06-11 18:50
  */
-@Component
+@Beans
 class GroupMemberLeaveListener {
 
     /**

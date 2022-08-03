@@ -1,9 +1,14 @@
 package com.huahua.robot.listener.grouplistener
 
 import com.huahua.robot.core.annotation.RobotListen
+import com.huahua.robot.core.common.send
 import com.huahua.robot.core.common.then
 import com.huahua.robot.core.enums.RobotPermission
+import com.huahua.robot.utils.PermissionUtil
+import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
+import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToMember
 import io.ktor.util.reflect.*
+import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.filter.MatchType
 import love.forte.simbot.component.mirai.MiraiMember
@@ -21,7 +26,7 @@ import kotlin.time.Duration.Companion.minutes
  * @author 花云端
  * @date 2022-05-11 19:16
  */
-@Component
+@Beans
 class GroupMangerListener {
 
     /**
@@ -47,10 +52,14 @@ class GroupMangerListener {
         try {
             val time = msg.trim().toInt()
             val list: ArrayList<At> = arrayListOf()
-            for (message: Message.Element<*> in messageContent.messages) {
-                if (message is At) {
-                    list.add(message)
-                    group().member(message.target)?.mute(time.minutes)
+            messageContent.messages.forEach{
+                if (it is At) {
+                    if (!botCompareToMember(group().member(it.target)!!)){
+                        send("权限不足，无法对此用户[${it.target}]进行操作")
+                        return
+                    }
+                    list.add(it)
+                    group().member(it.target)?.mute(time.minutes)
                 }
             }
             val message = buildMessages {
@@ -64,8 +73,7 @@ class GroupMangerListener {
             }
             group().send(message)
         } catch (e: Exception) {
-            println(e.message)
-            group().send("非法的时间参数")
+            group().send(e.message!!)
             return
         }
     }
@@ -73,7 +81,6 @@ class GroupMangerListener {
     /**
      * 解除禁言
      * @receiver GroupMessageEvent
-     * @param event GroupMessageEvent
      */
     @RobotListen(
         isBoot = true,
@@ -85,7 +92,14 @@ class GroupMangerListener {
     suspend fun GroupMessageEvent.unBan() {
         messageContent.messages.forEach {
             if (it is At) {
-                group().member(it.target)?.unmute()
+                if (!botCompareToMember(group().member(it.target)!!)){
+                    send("权限不足，无法对此用户[${it.target}]进行操作")
+                    return
+                }
+                val result = group().member(it.target)!!.unmute()
+                result.then {
+                    send("已解除用户[${it.target}]的禁言")
+                }
             }
         }
     }
@@ -102,7 +116,10 @@ class GroupMangerListener {
     )
     @Filter("开全体禁言")
     suspend fun GroupMessageEvent.groupBan() {
-        group().mute()
+        val result = group().mute()
+        result.then {
+            send("已开启群禁言")
+        }
     }
 
     /**
@@ -117,7 +134,10 @@ class GroupMangerListener {
     )
     @Filter("关全体禁言")
     suspend fun GroupMessageEvent.groupUnBan() {
-        group().unmute()
+        val result = group().unmute()
+        result.then {
+            send("已取消群禁言")
+        }
     }
 
     /**
@@ -135,7 +155,11 @@ class GroupMangerListener {
     suspend fun GroupMessageEvent.kickPerson() =
         messageContent.messages.forEach {
             (it is At).then {
-                (group().member((it as At).target) as MiraiMember).kick("芜湖，起飞")
+                if (!botCompareToMember(group().member((it as At).target)!!)){
+                    send("权限不足，无法对此用户[${it.target}]进行操作")
+                    return
+                }
+                (group().member(it.target) as MiraiMember).kick("芜湖，起飞")
             }
         }
 

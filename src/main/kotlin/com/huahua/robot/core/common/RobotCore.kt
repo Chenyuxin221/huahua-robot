@@ -2,9 +2,10 @@ package com.huahua.robot.core.common
 
 
 import com.huahua.robot.core.mapper.GroupBootStateMapper
-import love.forte.simbot.Bot
 import love.forte.simbot.ID
-import love.forte.simbot.OriginBotManager
+import love.forte.simbot.bot.Bot
+import love.forte.simbot.bot.OriginBotManager
+import love.forte.simbot.event.EventListenerManager
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
@@ -20,7 +21,9 @@ import javax.annotation.PostConstruct
 @Suppress("unused")
 @Order(1)
 @Component
-class RobotCore {
+class RobotCore (
+    private val listenerManager: EventListenerManager
+        ){
 
     @Autowired
     lateinit var mapper: GroupBootStateMapper
@@ -34,7 +37,6 @@ class RobotCore {
     @Synchronized
     private fun setApplicationContext() {
         robotCore = this
-        RobotCore.applicationContext = applicationContext
     }
 
     private fun initGroupBootMap() {
@@ -152,9 +154,9 @@ class RobotCore {
             return ADMINISTRATOR.contains(accountCode)
         }
 
-        fun getBot(): Bot? {
+        fun getBot(): Bot {
             @Suppress("OPT_IN_USAGE")
-            return OriginBotManager.getBot(BOTID)
+            return OriginBotManager.getAnyBot()
         }
     }
 }

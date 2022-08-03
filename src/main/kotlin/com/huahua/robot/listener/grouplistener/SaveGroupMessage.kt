@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.huahua.robot.api.entity.Message
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.utils.MessageUtil
+import love.forte.di.annotation.Beans
 import love.forte.simbot.LoggerFactory
 import love.forte.simbot.event.GroupMessageEvent
 import okhttp3.*

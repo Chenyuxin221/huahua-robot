@@ -9,18 +9,28 @@ import com.huahua.robot.utils.FileUtil.url
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
-import love.forte.simbot.ID
+import love.forte.simbot.LoggerFactory
 import love.forte.simbot.component.mirai.MiraiComponent
+import love.forte.simbot.component.mirai.bot.MiraiBot
+import love.forte.simbot.component.mirai.event.MiraiGroupMessageEvent
 import love.forte.simbot.component.mirai.message.MiraiMusicShare
+import love.forte.simbot.component.mirai.message.asSimbotMessage
+import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.event.MessageEvent
 import love.forte.simbot.message.*
-import love.forte.simbot.resources.FileResource
+import love.forte.simbot.message.At
+import love.forte.simbot.message.Image.Key.toImage
+import love.forte.simbot.message.Message
 import love.forte.simbot.resources.Resource.Companion.toResource
-import net.mamoe.mirai.message.data.MusicKind
+import love.forte.simbot.tryToLong
+import net.mamoe.mirai.Mirai
+import net.mamoe.mirai.contact.Contact.Companion.uploadImage
+import net.mamoe.mirai.message.data.*
+import net.mamoe.mirai.message.data.Image
+import net.mamoe.mirai.message.data.PlainText
 import java.io.File
 import java.net.URL
 import java.nio.file.Path
-import kotlin.io.path.Path
 
 /**
  * ClassName: MessageUtil
@@ -29,6 +39,8 @@ import kotlin.io.path.Path
  * @date 2022-05-07 22:34
  */
 class MessageUtil {
+
+    private val log = LoggerFactory.getLogger(MessageUtil::class)
     private val json = Json {
         isLenient = true
         ignoreUnknownKeys = true
@@ -44,47 +56,47 @@ class MessageUtil {
      * @return String   json字符串
      * @see messages
      */
-    fun encodeMessage(messages: Messages): String {
-        return json.encodeToString(Messages.serializer, messages)
-    }
+    fun encodeMessage(messages: Messages) = json.encodeToString(Messages.serializer, messages)
+
 
     /**
      * json转messages
      * @param messageJson String json格式的messages
      * @return Messages messages
      */
-    fun decodeMessage(messageJson: String): Messages {
-        return json.decodeFromString(Messages.serializer, messageJson)
-    }
+    fun decodeMessage(messageJson: String) = json.decodeFromString(Messages.serializer, messageJson)
+
 
     companion object {
-        fun getAtList(messageContent: ReceivedMessageContent): List<ID> {
-            return messageContent.messages.filter { it.key == At.Key }.map { (it as At).target }
+        fun getAtList(messageContent: ReceivedMessageContent) =
+            messageContent.messages.filter { it.key == At.Key }.map { (it as At).target }
+
+
+        private fun getImageMsg(url: String) = runBlocking {
+            url.url().toResource().toImage()
         }
 
-        private fun getImageMsg(url: String): Message {
-            return runBlocking { RobotCore.getBot()!!.uploadImage(url.url().toResource()) }
-        }
 
-
-        private fun getImageMsg(file: File): Message {
-            return runBlocking {
-                RobotCore.getBot()!!.uploadImage(FileResource(file))
-            }
+        private fun getImageMsg(file: File) = runBlocking {
+            file.toResource().toImage()
         }
 
         fun String.getImageMessage() = getImageMsg(this)
 
         fun File.getImageMessage() = getImageMsg(this)
 
-        fun URL.getImageMessage() = runBlocking { RobotCore.getBot()!!.uploadImage(this@getImageMessage.toResource()) }
+        fun URL.getImageMessage() = runBlocking {
+            this@getImageMessage.toResource().toImage()
+        }
 
-        fun Path.getImageMessage() = runBlocking { RobotCore.getBot()!!.uploadImage(this@getImageMessage.toResource()) }
+        fun Path.getImageMessage() = runBlocking {
+            this@getImageMessage.toResource().toImage()
+        }
 
-        suspend fun String.getTempImageMessage(array: ByteArray): Image<*>? {
+        suspend fun String.getTempImageMessage(array: ByteArray): love.forte.simbot.message.Image<*>? {
             val file = this.getTempImage(array)
             file.isNull { return null }
-            return RobotCore.getBot()!!.uploadImage(file!!.toResource())
+            return file!!.toResource().toImage()
         }
 
         /**
@@ -276,4 +288,28 @@ class MessageUtil {
             brief = brief
         )
     }
+
+}
+/**
+ * 图集转发消息
+ * @receiver GroupMessageEvent  simbot的群事件监听
+ * @param list ArrayList<String>?   图片列表
+ * @param userId Long   用户Id
+ * @return Message.Element<*>? simbot的消息
+ */
+suspend fun GroupMessageEvent.getForwardImageMessages(list:ArrayList<String>?,userId:Long): Message.Element<*>? {
+    val log = LoggerFactory.getLogger(MessageUtil::class)
+    if (list.isNullOrEmpty()){
+        log.error("图片列表为空")
+        return null
+    }
+    val forward:ForwardMessage ?
+    val miraiBot = bot as MiraiBot
+        forward = buildForwardMessage((this as MiraiGroupMessageEvent).originalEvent.group){
+            list.forEach{
+                val img = Image(miraiBot.originalBot.asFriend.uploadImage(File(it)).imageId)
+                add(RobotCore.BOTID.tryToLong(), Mirai.queryProfile(bot.originalBot,userId).nickname, img)
+            }
+        }
+    return forward.asSimbotMessage()
 }

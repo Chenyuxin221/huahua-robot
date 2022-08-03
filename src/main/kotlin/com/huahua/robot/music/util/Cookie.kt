@@ -8,7 +8,6 @@ import com.huahua.robot.utils.FileUtil.toFile
 import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.MessageUtil.Companion.getImageMessage
 import com.huahua.robot.utils.ResponseEntity
-import java.io.File
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.ExecutionException

@@ -4,12 +4,14 @@ package com.huahua.robot.core.common
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Listener
 import love.forte.simbot.ID
 import love.forte.simbot.action.SendSupport
 import love.forte.simbot.action.sendIfSupport
 import love.forte.simbot.component.mirai.SimbotMiraiMessageReceipt
 import love.forte.simbot.component.mirai.event.MiraiMessagePostSendEvent
+import love.forte.simbot.definition.Contact
 import love.forte.simbot.definition.Friend
 import love.forte.simbot.definition.Group
 import love.forte.simbot.event.*
@@ -22,7 +24,7 @@ import java.util.concurrent.TimeUnit
 /**
  * @author wuyou，花云端
  */
-@Component
+@Beans
 class Sender {
     /**
      * 发送消息后的事件,用于获取上下文后监听下一条消息
@@ -35,10 +37,10 @@ class Sender {
             val time = it["time"].toString().toLong()
             if (time == 0L) return
             withTimeoutOrNull(time) {
-                val eventMatcher = it["eventMatcher"] as EventMatcher<MessageEvent>
+                val eventMatcher = it["eventMatcher"] as ContinuousSessionEventMatcher<MessageEvent>
                 val channel = it["channel"] as Channel<MessageContent>
-                session.waitingForNextMessage(originalEvent.receipt.hashCode().ID, EventMatcher { event ->
-                    return@EventMatcher eventMatcher.run { invoke(event) } && event.getId() == it["id"]
+                session.waitingForNextMessage(originalEvent.receipt.hashCode().toString(), ContinuousSessionEventMatcher { event ->
+                    return@ContinuousSessionEventMatcher eventMatcher.run { invoke(event) } && event.getId() == it["id"]
                 }).let { msg ->
                     channel.send(msg)
                 }
@@ -65,7 +67,7 @@ class Sender {
             separator: String = "",
             timeout: Long = 0,
             timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
-            eventMatcher: EventMatcher<MessageEvent> = EventMatcher,
+            eventMatcher: ContinuousSessionEventMatcher<MessageEvent> = ContinuousSessionEventMatcher,
         ): MessageContent? {
             val messageReceipt = when (event) {
                 is SendSupport -> event.send(buildMessage(messages, separator))
@@ -74,9 +76,8 @@ class Sender {
             val coroutineScope = CoroutineScope(Dispatchers.Default)
             coroutineScope.launch {
                 delay(timeUnit.toMillis(timeout))
-                messageReceipt?.deleteIfSupport()
+                messageReceipt?.delete()
             }
-
             return wait(messageReceipt, event.getId(), timeout, timeUnit, eventMatcher)
         }
 
@@ -97,7 +98,7 @@ class Sender {
             separator: String = "",
             timeout: Long = 0,
             timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
-            eventMatcher: EventMatcher<MessageEvent> = EventMatcher,
+            eventMatcher: ContinuousSessionEventMatcher<MessageEvent> = ContinuousSessionEventMatcher,
         ): MessageContent? = wait(
             sendGroupMsg(group, messages, separator), "message-${group}-${qq}", timeout, timeUnit, eventMatcher
         )
@@ -117,7 +118,7 @@ class Sender {
             separator: String = "",
             timeout: Long = 0,
             timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
-            eventMatcher: EventMatcher<MessageEvent> = EventMatcher,
+            eventMatcher: ContinuousSessionEventMatcher<MessageEvent> = ContinuousSessionEventMatcher,
         ): MessageContent? = wait(
             sendPrivateMsg(qq, messages, separator), "message-$qq", timeout, timeUnit, eventMatcher
         )
@@ -135,7 +136,7 @@ class Sender {
             id: String,
             timeout: Long = 0,
             timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
-            eventMatcher: EventMatcher<MessageEvent> = EventMatcher,
+            eventMatcher: ContinuousSessionEventMatcher<MessageEvent> = ContinuousSessionEventMatcher,
         ): MessageContent? {
             val time = timeUnit.toMillis(timeout)
             if (time > 0 && messageReceipt?.isSuccess == true && messageReceipt is SimbotMiraiMessageReceipt<*>) {
@@ -162,10 +163,13 @@ class Sender {
             event: Event,
             messages: Any,
             separator: String = "",
-        ): MessageReceipt? = when (event) {
-            is SendSupport -> event.send(buildMessage(messages, separator))
-            is MessageEvent -> event.source().sendIfSupport(buildMessage(messages, separator))
-            else -> null
+        ): MessageReceipt? {
+            if (messages.toString().isEmpty()) return null
+            return when (event) {
+                is SendSupport -> event.send(buildMessage(messages, separator))
+                is MessageEvent -> event.source().sendIfSupport(buildMessage(messages, separator))
+                else -> null
+            }
         }
 
         /**
@@ -212,7 +216,7 @@ class Sender {
          * @param separator [messages]是数组或列表时的消息分隔符
          */
         private fun sendPrivateMsg(
-            friend: Friend?,
+            friend: Contact?,
             messages: Any,
             separator: String = "",
         ) = runBlocking { return@runBlocking friend?.send(buildMessage(messages, separator)) }
@@ -245,13 +249,13 @@ class Sender {
          * 获取好友对象
          * @param friend QQ号.ID
          */
-        private fun getFriend(friend: ID): Friend? = runBlocking { RobotCore.getBot()?.friend(friend) }
+        private fun getFriend(friend: ID): Contact? = runBlocking { RobotCore.getBot().contact(friend) }
 
         /**
          * 获取群聊对象
          * @param group 群号.ID
          */
-        private fun getGroup(group: ID): Group? = runBlocking { RobotCore.getBot()?.group(group) }
+        private fun getGroup(group: ID): Group? = runBlocking { RobotCore.getBot().group(group) }
 
         /**
          * 根据[messages]和[separator]构建一条消息
@@ -354,7 +358,7 @@ suspend fun MessageEvent.sendAndWait(
     messages: Any,
     timeout: Long = 0,
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
-    eventMatcher: EventMatcher<MessageEvent> = EventMatcher,
+    eventMatcher: ContinuousSessionEventMatcher<MessageEvent> = ContinuousSessionEventMatcher,
 ): MessageContent? = sendAndWait(messages, "", timeout, timeUnit, eventMatcher)
 
 /**
@@ -371,7 +375,7 @@ suspend fun MessageEvent.sendAndWait(
     separator: String = "",
     timeout: Long = 0,
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
-    eventMatcher: EventMatcher<MessageEvent> = EventMatcher,
+    eventMatcher: ContinuousSessionEventMatcher<MessageEvent> = ContinuousSessionEventMatcher,
 ): MessageContent? = Sender.sendAndWait(this, messages, separator, timeout, timeUnit, eventMatcher)
 
 /**
@@ -383,8 +387,6 @@ suspend fun MessageEvent.sendAndWait(
 fun MessageEvent.send(messages: Any, separator: String = "") = runBlocking {
     return@runBlocking Sender.send(this@send, messages, separator)
 }
-
-
 
 /**
  * 获取消息id,用于等待下一条消息的标识

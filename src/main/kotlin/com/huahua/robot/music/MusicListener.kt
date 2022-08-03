@@ -4,7 +4,6 @@ package com.huahua.robot.music
 
 import com.alibaba.fastjson2.JSON
 import com.alibaba.fastjson2.JSONObject
-import com.google.gson.Gson
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.*
 import com.huahua.robot.core.enums.RobotPermission
@@ -19,6 +18,7 @@ import com.huahua.robot.utils.MessageUtil.Companion.getKugouMusicShare
 import com.huahua.robot.utils.MessageUtil.Companion.getNeteaseCloudMusicShare
 import com.huahua.robot.utils.MessageUtil.Companion.getQQMusicShare
 import com.huahua.robot.utils.PostType
+import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
@@ -35,7 +35,7 @@ import kotlin.reflect.jvm.jvmName
  * @author 花云端
  * @date 2022-05-18 16:43
  */
-@Component
+@Beans
 class MusicListener {
     private val log = LoggerFactory.getLogger(MusicListener::class.jvmName) // 获取日志记录器
     private val listTip = "\n---------------------\n" +

@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
 import kotlin.io.path.notExists
 
@@ -138,6 +139,7 @@ object HttpUtil {
                     it.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.mimeType)   // 设置请求内容类型
                 }
             }
+
             HttpMethod.Delete -> HttpDelete(uri)   // 创建HttpDelete请求
             HttpMethod.Put -> HttpPut(uri).also {  // 创建HttpPut请求
                 if (entity.json.isNotBlank()) { // 判断请求内容是否为空
@@ -145,6 +147,7 @@ object HttpUtil {
                     it.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.mimeType)   // 设置请求内容类型
                 }
             }
+
             else -> null    // 不支持的请求方式
         } ?: return ResponseEntity()    // 返回响应实体
         setCookies(httpRequest, entity.getCookies())    // 设置Cookie
@@ -200,14 +203,80 @@ object HttpUtil {
     }
 
     /**
+     * 发送http请求
+     * @param method String 请求方式
+     * @param url String    地址
+     * @param params MutableMap<String, Any>    参数
+     * @return String 请求结果
+     */
+    private fun request(method: String, url: String, params: MutableMap<String, Any>): String {
+        method.isNullOrEmpty().then { throw RuntimeException("请求方法不能为空") }
+        url.isNullOrEmpty().then { throw RuntimeException("url不能为空") }
+        val httpBuilder: HttpUrl.Builder = HttpUrl.parse(url)!!.newBuilder()
+        params.forEach { (k, v) ->
+            httpBuilder.addQueryParameter(k, v.toString())
+        }
+        val request = Request.Builder()
+            .url(httpBuilder.build())
+            .method(method, null)
+            .addHeader(
+                "User-Agent",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.134 Safari/537.36 Edg/103.0.1264.77"
+            )
+            .addHeader(
+                "Accept",
+                "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+            )
+            .build()
+        val list = mutableListOf(Protocol.HTTP_1_1)
+        return try {
+            val client = OkHttpClient().newBuilder()
+                .connectTimeout(60000, TimeUnit.MILLISECONDS)
+                .readTimeout(60000, TimeUnit.MILLISECONDS)
+                .writeTimeout(60000, TimeUnit.MILLISECONDS)
+                .protocols(list)
+                .build()
+            val response = client.newCall(request).execute()
+            logger {
+                request.url().toString()
+                response.isSuccessful
+            }
+            response.body()!!.string()
+        } catch (e: IOException) {
+            ""
+        }
+    }
+
+    /**
+     * 发送get请求
+     * @param url String 地址
+     * @param params MutableMap<String, Any> 参数
+     * @return String 请求结果
+     */
+    fun get(url: String, params: MutableMap<String, Any>) = request("get", url, params)
+
+    /**
+     * 发送post请求
+     * @param url String 地址
+     * @param params MutableMap<String, Any> 参数
+     * @return String 请求结果
+     */
+    fun post(url: String, params: MutableMap<String, Any>) = request("post", url, params)
+
+    /**
      * 获取网页正文
      * @param url String    网址
      * @return String 网页正文
      */
     fun getBody(url: String): String {
         val client = OkHttpClient() // 创建OkHttpClient对象
+        val build = client.newBuilder()
+            .connectTimeout(60000, TimeUnit.MILLISECONDS)
+            .readTimeout(60000, TimeUnit.MILLISECONDS)
+            .writeTimeout(60000,TimeUnit.MILLISECONDS)
+            .build()
         val request = Request.Builder().url(url).build()    // 创建Request对象
-        return client.newCall(request).execute().body()?.string().toString()
+        return build.newCall(request).execute().body()?.string().toString()
     }
 
     /**
@@ -228,9 +297,9 @@ object HttpUtil {
      * @return String?  返回结果
      */
     fun post(url: String, map: HashMap<String, Any>, type: PostType) = when (type) {
-            PostType.DATA -> postOfData(url, map)
-            PostType.JSON -> postOfJson(url, map)
-        }
+        PostType.DATA -> postOfData(url, map)
+        PostType.JSON -> postOfJson(url, map)
+    }
 
 
     /**
@@ -256,6 +325,7 @@ object HttpUtil {
         val response = client.newCall(request).execute()
         return response.body()?.string()
     }
+
 
     /**
      * 发送json格式的请求
@@ -286,8 +356,14 @@ object HttpUtil {
      * @param url String    网址
      * @return Response 返回体
      */
-    fun getResponse(url: String): Response =
-        OkHttpClient().newCall(Request.Builder().url(url).build()).execute() // 获取网页返回请求体
+    fun getResponse(url: String): Response {
+        val client = OkHttpClient().newBuilder()
+            .connectTimeout(60000, TimeUnit.MILLISECONDS)
+            .readTimeout(60000, TimeUnit.MILLISECONDS)
+            .build()
+
+        return client.newCall(Request.Builder().url(url).build()).execute() // 获取网页返回请求体
+    }
 
 
 }

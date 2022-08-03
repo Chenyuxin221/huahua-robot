@@ -1,5 +1,6 @@
 package com.huahua.robot.utils
 
+import com.huahua.robot.core.common.RobotCore
 import kotlinx.coroutines.runBlocking
 import love.forte.simbot.definition.GroupMember
 import love.forte.simbot.definition.Member
@@ -20,12 +21,12 @@ class PermissionUtil {
      * @return Permission   权限枚举
      */
     private fun getPermissionCode(member: GroupMember) = runBlocking {
-        if (member.isAdmin()) { //判断是否是管理员
-            Permission.ADMINISTRATORS   //如果是管理员，则返回管理员权限码
-        } else if (member.isOwner()) {  //判断是否是群主
-            Permission.OWNER        //如果是群主，则返回群主权限码
-        } else {                      //如果不是管理员，也不是群主，则返回普通成员权限码
-            Permission.MEMBER    //如果不是管理员，也不是群主，则返回普通成员权限码
+        if (member.isOwner()) { //判断是否是群主
+            Permission.OWNER   //如果是群主，则返回群主权限
+        } else if (member.isAdmin()) {  //判断是否是管理员
+            Permission.ADMINISTRATORS        //如果是管理员，则返回管理员权限
+        } else {
+            Permission.MEMBER    //如果不是管理员，也不是群主，则返回普通成员权限
         }
     }
 
@@ -35,15 +36,14 @@ class PermissionUtil {
      * @return Permission   权限
      */
     private fun getPermissionCode(member: Member) = runBlocking {
-        if (member.isAdmin()) { //判断是否为管理员
-            Permission.ADMINISTRATORS   //如果是管理员，则返回管理员权限
-        } else if (member.isOwner()) {  //判断是否为群主
-            Permission.OWNER       //如果是群主，则返回群主权限
-        } else {                      //如果不是管理员，也不是群主，则返回普通成员权限
+        if (member.isOwner()) { //判断是否是群主
+            Permission.OWNER   //如果是群主，则返回群主权限
+        } else if (member.isAdmin()) {  //判断是否是管理员
+            Permission.ADMINISTRATORS        //如果是管理员，则返回管理员权限
+        } else {
             Permission.MEMBER    //如果不是管理员，也不是群主，则返回普通成员权限
         }
     }
-
 
 
     companion object {  //静态内部类
@@ -56,7 +56,7 @@ class PermissionUtil {
         fun GroupMessageEvent.botPermission() =
             runBlocking {
                 PermissionUtil().getPermissionCode(
-                    this@botPermission.group().member(this@botPermission.bot.id)!!  //获取群Bot的权限
+                    this@botPermission.group().member(RobotCore.BOTID)!!  //获取群Bot的权限
                 )
             }
 
@@ -66,7 +66,9 @@ class PermissionUtil {
          * @return Permission   权限
          */
         fun GroupMessageEvent.authorPermission() =
-            runBlocking { PermissionUtil().getPermissionCode(this@authorPermission.author()) }  //获取成员的权限
+            runBlocking {
+                PermissionUtil().getPermissionCode(this@authorPermission.author())
+            }  //获取成员的权限
 
         /**
          * 获取群成员在群中的权限
@@ -88,8 +90,9 @@ class PermissionUtil {
          * @receiver GroupMessageEvent  群消息事件
          * @return Boolean  是否有权限
          */
-        fun GroupMessageEvent.botCompareToAuthor() =
-            runBlocking { botPermission() > authorPermission() }   //比较bot和该成员的权限
+        fun GroupMessageEvent.botCompareToAuthor()= runBlocking {
+            botPermission() > authorPermission()
+        }   //比较bot和该成员的权限
 
         /**
          * 比较bot和群成员的权限

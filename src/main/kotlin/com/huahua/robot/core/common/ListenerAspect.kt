@@ -2,14 +2,15 @@ package com.huahua.robot.core.common
 
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.enums.RobotPermission
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import love.forte.simbot.event.Event
 import love.forte.simbot.event.GroupMessageEvent
+import love.forte.simbot.utils.item.toList
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
 import org.springframework.stereotype.Component
+
 
 /**
  * 拦截监听器
@@ -47,9 +48,9 @@ class ListenerAspect {
         if (event is GroupMessageEvent) {
             val group = runBlocking { event.group() }
             val author = runBlocking { event.author() }
-            val role = runBlocking { author.roles().first() }
-            val botPermission = runBlocking { group.member(event.bot.id)?.roles()?.first() }  //机器人在当前群聊的权限
-            // 判断是否开机
+            val role = runBlocking { author.roles.toList()[0] }
+            val botPermission = runBlocking { group.member(event.bot.id)?.roles?.toList()?.get(0)}
+                // 判断是否开机
             if (annotation.isBoot && !RobotCore.BOOT_MAP.getOrDefault(group.id.toString(), false)) {
                 return proceedFailed("当前群未开机")
             }

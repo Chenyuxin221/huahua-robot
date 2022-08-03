@@ -13,9 +13,12 @@ import com.huahua.robot.utils.FileUtil.url
 import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.MessageUtil.Companion.getImageMessage
 import com.huahua.robot.utils.Permission
+import com.huahua.robot.utils.PermissionUtil.Companion.authorPermission
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
 import com.huahua.robot.utils.PermissionUtil.Companion.botPermission
 import com.huahua.robot.utils.PostType
+import com.huahua.robot.utils.TimeUtil
+import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
 import love.forte.simbot.ID
 import love.forte.simbot.LoggerFactory
@@ -24,8 +27,8 @@ import love.forte.simbot.message.At
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.plus
 import love.forte.simbot.message.toText
-import org.springframework.stereotype.Component
 import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.minutes
 
 /**
@@ -34,7 +37,7 @@ import kotlin.time.Duration.Companion.minutes
  * @author 花云端
  * @date 2022-06-13 17:34
  */
-@Component
+@Beans
 class GroupListener {
 
     private val lotteryPrefix: List<String> = listOf("chou", "cou", "c", "抽", "操", "艹", "草")    //抽奖前缀
@@ -45,9 +48,51 @@ class GroupListener {
      * 抽奖
      * @receiver GroupMessageEvent
      */
-    @RobotListen(isBoot = true, desc = "抽奖服务", permission = RobotPermission.MEMBER)
+    @RobotListen(
+        isBoot = true,
+        desc = "抽奖服务",
+        permission = RobotPermission.MEMBER,
+        permissionsRequiredByTheRobot = RobotPermission.ADMINISTRATOR
+    )
     suspend fun GroupMessageEvent.luckDraw() {
         val msg = messageContent.plainText  // 获取消息内容
+        var time = 0
+        if (msg.contains("连抽")) {
+            var reg = """\d+""".toRegex().find(input = msg)?.value
+            var result = 0
+            reg?.let { //匹配到了阿拉伯数字
+                result = reg!!.toInt()
+            }.isNull {    // 未匹配到阿拉伯数字，匹配汉字
+                reg = """[零一二三四五六七八九十百壹贰叁肆伍陆柒捌玖拾佰]*""".toRegex().find(msg)?.value
+                if (reg == null) {
+                    println("抽奖失败，请检查语法")
+                    return
+                }
+                result = chineseNumeralConversion(reg!!)
+            }
+            for (i in result downTo 1) {
+                val lucky = lucky(80)
+                time += lucky.time * lucky.multiple
+            }
+            if (time > 43200) {
+                time = 43200
+            }
+            val timeMillisecond = TimeUnit.MINUTES.toMillis(time.toLong())
+            val format = TimeUtil.millisecondFormat(timeMillisecond)
+            if (botCompareToAuthor()) {
+                val r = author().mute((time).minutes)
+                r.then {
+                    send(At(author().id) + " 恭喜你抽到了${format}的禁言套餐".toText())
+                }
+            } else if (botPermission() == Permission.ADMINISTRATORS &&
+                authorPermission() == Permission.OWNER ||
+                authorPermission() == Permission.ADMINISTRATORS) {
+                send(At(author().id) + " 你抽个屁的奖".toText())  // 发送消息
+            } else {
+                send("哎呀，无法奖励你~权限不够呢")  // 发送消息
+            }
+            return
+        }
         val lucky = lucky(80)   // 获取抽奖结果
         var num = 0 // 初始化触发次数
         for (it in lotteryPrefix) { // 遍历抽奖前缀
@@ -62,23 +107,20 @@ class GroupListener {
                 break   // 跳出循环
             }
         }
+
         if ((msg == "抽奖" || "cj" == msg.lowercase() || msg == "奖励我") || num == 2)  // 判断消息内容是否为抽奖
-            when {
-                botCompareToAuthor() -> {  //判断bot是否拥有禁言权限
-                    author().mute((lucky.time * lucky.multiple).minutes)    // 禁言指定时间
-                    val message: Message = At(author().id) +
-                            " 恭喜你抽到了${lucky.time}分钟".toText() +
-                            if (lucky.multiple == 1) "".toText() else
-                                ("，真是太棒了，你抽中的奖励翻了${lucky.multiple}倍，" +
-                                        "变成了${lucky.time * lucky.multiple}分钟").toText() // 拼接字符串
-                    send(message)   // 发送消息
-                }
-                botPermission() == Permission.ADMINISTRATORS -> { // 没有禁言权限但是bot有管理员权限
-                    send(At(author().id) + " 你抽个屁的奖".toText())  // 发送消息
-                }
-                else -> {  //  没有禁言权限也没有管理员权限 也就是bot为普通成员
-                    send("哎呀，无法奖励你~权限不够呢")  // 发送消息
-                }
+            if (botCompareToAuthor()) {
+                author().mute((lucky.time * lucky.multiple).minutes)    // 禁言指定时间
+                val message: Message =
+                    At(author().id) + " 恭喜你抽到了${lucky.time}分钟".toText() + if (lucky.multiple == 1) "".toText() else ("，真是太棒了，你抽中的奖励翻了${lucky.multiple}倍，" + "变成了${lucky.time * lucky.multiple}分钟").toText() // 拼接字符串
+                send(message)   // 发送消息
+            } else if (botPermission() == Permission.ADMINISTRATORS &&
+                authorPermission() == Permission.OWNER ||
+                authorPermission() == Permission.ADMINISTRATORS
+            ) { // 没有禁言权限但是bot有管理员权限
+                send(At(author().id) + " 你抽个屁的奖".toText())  // 发送消息
+            } else {  //  没有禁言权限也没有管理员权限 也就是bot为普通成员
+                send("哎呀，无法奖励你~权限不够呢")  // 发送消息
             }
     }
 
@@ -104,6 +146,88 @@ class GroupListener {
         }   // 获取抽奖倍数
         return LuckyTime(time, multiple)    // 返回抽奖结果
     }
+
+    /**
+     * 解析汉语中的数字组合 支持大写
+     * 解析范围 零到一百到九百
+     * @param number String 数字
+     * @return Int  阿拉伯数字
+     */
+    private fun chineseNumeralConversion(number: String): Int {
+        val len = number.length
+        val chars = number.toCharArray()
+        if (len == 1) {
+            return when (chars[0]) {
+                '零' -> 0
+                '一', '壹' -> 1
+                '二', '贰' -> 2
+                '三', '叁' -> 3
+                '四', '肆' -> 4
+                '五', '伍' -> 5
+                '六', '陆' -> 6
+                '七', '柒' -> 7
+                '八', '捌' -> 8
+                '九', '玖' -> 9
+                '十', '拾' -> 10
+                '百', '佰' -> 100
+                else -> -1
+            }
+        }
+        if (len == 2) {
+            var num: Int = when (chars[0]) {
+                '一', '壹' -> 1
+                '二', '贰' -> 2
+                '三', '叁' -> 3
+                '四', '肆' -> 4
+                '五', '伍' -> 5
+                '六', '陆' -> 6
+                '七', '柒' -> 7
+                '八', '捌' -> 8
+                '九', '玖' -> 9
+                '十', '拾' -> 10
+                else -> -1
+            }
+            num *= when (chars[1]) {
+                '十', '拾' -> 10
+                '百', '佰' -> 100
+                else -> 1
+            }
+            return num
+        }
+        if (len == 3) {
+            var num: Int = when (chars[0]) {
+                '二', '贰' -> 2
+                '三', '叁' -> 3
+                '四', '肆' -> 4
+                '五', '伍' -> 5
+                '六', '陆' -> 6
+                '七', '柒' -> 7
+                '八', '捌' -> 8
+                '九', '玖' -> 9
+                '十', '拾' -> 10
+                else -> 0
+            }
+            if (chars[1] == '十' || chars[1] == '拾') {
+                num *= 10
+            }
+            num += when (chars[2]) {
+                '一', '壹' -> 1
+                '二', '贰' -> 2
+                '三', '叁' -> 3
+                '四', '肆' -> 4
+                '五', '伍' -> 5
+                '六', '陆' -> 6
+                '七', '柒' -> 7
+                '八', '捌' -> 8
+                '九', '玖' -> 9
+                '十', '拾' -> 10
+                else -> 0
+            }
+            return num
+        }
+        return -1
+    }
+
 
     /**
      * 一些作图操作 --静态图片
@@ -161,16 +285,16 @@ class GroupListener {
             }
         }
     }
+
     @RobotListen(desc = "点赞功能", isBoot = true)
     @Filter("赞我")
-    suspend fun GroupMessageEvent.praiseMe(){
-        val url = "https://api.klizi.cn/API/ce/zan.php?qq=${author().id}"
-        "praiseMe.jpg".getTempImage(url.url())?.also {
+    suspend fun GroupMessageEvent.praiseMe() =
+        "praiseMe.jpg".getTempImage("https://api.klizi.cn/API/ce/zan.php?qq=${author().id}".url())?.also {
             send(it.getImageMessage())
         }.isNull {
             send("图片获取失败，请稍后再试")
         }?.delete()
-    }
+
 
     @RobotListen(isBoot = true, desc = "作图服务-动态图片")
     suspend fun GroupMessageEvent.gifPicture() {
@@ -235,6 +359,7 @@ class GroupListener {
                     }
                 }
             }
+
             2 -> {
                 var name1 = group().member(atList[0])!!.nickOrUsername
                 var name2 = group().member(atList[1])!!.nickOrUsername
@@ -249,14 +374,17 @@ class GroupListener {
                                 params["g"] = name2
                                 params["s"] = author().nickOrUsername
                             }
+
                             atList[1] == RobotCore.ADMINISTRATOR.ID -> {
                                 params["g"] = name1
                                 params["s"] = author().nickOrUsername
                             }
+
                             atList[0] == atList[1] -> {
                                 send("不能和自己嗑")
                             }
-                            else ->{
+
+                            else -> {
                                 params["g"] = name1
                                 params["s"] = name2
                             }
@@ -264,13 +392,14 @@ class GroupListener {
                     }
                 }
             }
+
             3 -> send("不支持多人运动")
+            else -> return
         }
         if (params.isEmpty()) {
             return
         }
         val result = HttpUtil.post(url, params, PostType.DATA)
-        println(JSON.parseObject(result).toJSONString())
         val code = JSON.parseObject(result).getInteger("code")
         if (code == 0) {
             val data = JSON.parseObject(result).getString("data")
@@ -280,4 +409,5 @@ class GroupListener {
             send("请求失败，请稍后再试")
         }
     }
+
 }

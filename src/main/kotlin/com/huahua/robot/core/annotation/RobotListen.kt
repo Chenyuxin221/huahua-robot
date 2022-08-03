@@ -1,6 +1,7 @@
 package com.huahua.robot.core.annotation
 
 import com.huahua.robot.core.enums.RobotPermission
+import love.forte.simboot.annotation.ContentTrim
 import love.forte.simboot.annotation.Listener
 import love.forte.simbot.event.GroupMessageEvent
 
@@ -9,15 +10,10 @@ import love.forte.simbot.event.GroupMessageEvent
  * @author 花云端
  */
 @Retention(AnnotationRetention.RUNTIME)
-@Target(
-    AnnotationTarget.FUNCTION,
-    AnnotationTarget.PROPERTY_GETTER,
-    AnnotationTarget.PROPERTY_SETTER,
-    AnnotationTarget.ANNOTATION_CLASS,
-    AnnotationTarget.CLASS,
-    AnnotationTarget.ANNOTATION_CLASS
-)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS)
 @Listener
+@ContentTrim
+@Suppress("OPT_IN_USAGE", "unused")
 annotation class RobotListen(
     /**
      * 描述信息
