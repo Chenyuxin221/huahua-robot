@@ -336,7 +336,10 @@ class Listener {
         val reply = HttpUtil.getJsonClassFromUrl(url, Chat::class.java).text    // 获取回复内容
         when (this) {
             is GroupMessageEvent -> {
-                RobotCore.HaveReplied[author().id] ?: return
+                if (RobotCore.HaveReplied[author().id] == true) {
+                    RobotCore.HaveReplied[author().id] = false
+                    return
+                }
                 (reply.isEmpty()).then {
                     (group().id == "1043409458".ID).then {
                         send(At("2984131619".ID) + " $msg".toText())
@@ -348,7 +351,6 @@ class Listener {
                 send(At(author().id) + " $reply".toText())  // 发送消息
             }  // 发送消息
             is FriendMessageEvent -> {
-
                 (reply.isEmpty()).then {
                     send("喵喵喵？")
                     return
@@ -408,14 +410,14 @@ class Listener {
             Bgm_Url: ${music.getString("url")}
         """.trimIndent()
         }   //抖音分享解析
-        if (reg.contains("kuaishou")){
+        if (reg.contains("kuaishou")) {
             str = """
             Title: ${data.getString("title")},
             Author: ${data.getString("author")},
             Video_Url: ${data.getString("url")},
         """.trimIndent()
         }   //快手分享解析
-        if (reg.contains("xiaochuankeji")){
+        if (reg.contains("xiaochuankeji")) {
             str = """
             Title: ${data.getString("title")},
             Author: ${data.getString("author")},

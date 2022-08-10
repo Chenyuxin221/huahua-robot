@@ -315,6 +315,7 @@ class GroupListener {
                 }.also { url ->
                     "pic.gif".getTempImage(url.url())?.also { file ->
                         send(file.getImageMessage())
+                        RobotCore.HaveReplied[author().id] = true
                     }.isNull {
                         send("图片获取失败，请稍后再试")
                     }?.delete()
@@ -394,6 +395,7 @@ class GroupListener {
             }
 
             3 -> send("不支持多人运动")
+            4 -> send("不支持多人运动")
             else -> return
         }
         if (params.isEmpty()) {
@@ -404,6 +406,7 @@ class GroupListener {
         if (code == 0) {
             val data = JSON.parseObject(result).getString("data")
             val reply = JSON.parseObject(data).getString("msg")
+            RobotCore.HaveReplied[author().id] = true
             send(reply)
         } else {
             send("请求失败，请稍后再试")
