@@ -58,7 +58,7 @@ class PrivateListener {
     }
 
     @RobotListen(desc = "重启服务")
-    @Filter("重启")
+    @Filter(".restart")
     suspend fun FriendMessageEvent.restartBot() {
         (friend().id == RobotCore.ADMINISTRATOR.ID).then {
             val command = "CMD /C START CMD /K ${RobotCore.BOOTCOMMANDPATH}"

@@ -8,8 +8,6 @@
 
 该项目为Springboot项目，此项目基于[simbot3](https://github.com/simple-robot/simbot-component-mirai)，实现了其中的mirai组件
 
-
-
 ## 项目文档
 
 菜单地址：[3.x 功能菜单](https://www.yuque.com/qingsi-zwnmu/xyuvvi/wrbzgy)
@@ -48,18 +46,21 @@ bot.bot
 
 ```json
 {
-    "component": "simbot.mirai",
-  	"code": 123456789,
-  	"passwordMD5": "bot的密码 使用md5加密",
-  	"deviceInfoSeed": 1,
-  	"workingDir": ".",
-  	"heartbeatPeriodMillis": 60000,
-  	"statHeartbeatPeriodMillis": 300000,
-  	"heartbeatTimeoutMillis": 5000,
-  	"heartbeatStrategy": "STAT_HB",
-  	"reconnectionRetryTimes": 2147483647,
-  	"autoReconnectOnForceOffline": false,
-  	"protocol": "ANDROID_PHONE" 
+  "component": "simbot.mirai",
+  "code": 123456789,
+  "passwordInfo": {
+    "type": "md5_text",
+    "md5": "使用md5加密后的bot密码"
+  },
+  "deviceInfoSeed": 1,
+  "workingDir": ".",
+  "heartbeatPeriodMillis": 60000,
+  "statHeartbeatPeriodMillis": 300000,
+  "heartbeatTimeoutMillis": 5000,
+  "heartbeatStrategy": "STAT_HB",
+  "reconnectionRetryTimes": 2147483647,
+  "autoReconnectOnForceOffline": false,
+  "protocol": "ANDROID_PHONE"
 }
 ```
 
@@ -75,13 +76,13 @@ spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 spring.datasource.url=你的数据库地址
 spring.datasource.username=用户名
 spring.datasource.password=用户密码
-
 huahua.account.admin.id=管理员QQ号
 huahua.account.bot.id=BotQQ号
 huahua.config.boot-command=“启动文件路径”
 ```
 
 #### 例：启动文件.bat
+
 ```bat
 @ECHO OFF 
 java -jar "你打包好后的jar包"
@@ -91,7 +92,7 @@ java -jar "你打包好后的jar包"
 
 执行[sql](./src/main/resources/sql)目录下的*.sql文件
 
-### 运行Bot	
+### 运行Bot
 
 运行[HuahuaRobotApplication.kt](./src/main/kotlin/com/huahua/robot/HuahuaRobotApplication.kt)文件
 
@@ -164,12 +165,10 @@ java -jar "你打包好后的jar包"
 │      └─templates
 ```
 
-
-
 ## 注意事项
+
 - ### 无法登录提示环境异常 循环验证登不上去
 
-​		请在手机上打开设备锁，再重新申请验证
-
+​ 请在手机上打开设备锁，再重新申请验证
 
 - ### 不要在*.properties文件里加一些奇奇怪怪的配置项

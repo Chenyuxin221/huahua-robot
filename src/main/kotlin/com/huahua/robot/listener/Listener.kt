@@ -388,9 +388,13 @@ class Listener {
         }
         val api = "https://api.caonm.net/api/dsp/api.php?url=$reg"
         val body = HttpUtil.getBody(api)
-        log.debug(body)
+        body.contains("404").then {
+            send("解析失败")
+            return
+        }
         val result = JSON.parseObject(body)
         (result.getIntValue("code") == 201).then {
+            send("不支持解析该链接")
             return
         }
         (result.getIntValue("code") != 200).then {
