@@ -4,19 +4,19 @@ import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.send
 import com.huahua.robot.core.common.then
 import com.huahua.robot.core.enums.RobotPermission
-import com.huahua.robot.utils.PermissionUtil
-import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
+import com.huahua.robot.utils.Permission
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToMember
-import io.ktor.util.reflect.*
+import com.huahua.robot.utils.PermissionUtil.Companion.botPermission
 import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.filter.MatchType
 import love.forte.simbot.component.mirai.MiraiMember
+import love.forte.simbot.component.mirai.event.MiraiGroupMessageEvent
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.message.At
-import love.forte.simbot.message.Message
 import love.forte.simbot.message.buildMessages
-import org.springframework.stereotype.Component
+import love.forte.simbot.message.plus
+import love.forte.simbot.message.toText
 import kotlin.time.Duration.Companion.minutes
 
 
@@ -52,9 +52,9 @@ class GroupMangerListener {
         try {
             val time = msg.trim().toInt()
             val list: ArrayList<At> = arrayListOf()
-            messageContent.messages.forEach{
+            messageContent.messages.forEach {
                 if (it is At) {
-                    if (!botCompareToMember(group().member(it.target)!!)){
+                    if (!botCompareToMember(group().member(it.target)!!)) {
                         send("权限不足，无法对此用户[${it.target}]进行操作")
                         return
                     }
@@ -92,7 +92,7 @@ class GroupMangerListener {
     suspend fun GroupMessageEvent.unBan() {
         messageContent.messages.forEach {
             if (it is At) {
-                if (!botCompareToMember(group().member(it.target)!!)){
+                if (!botCompareToMember(group().member(it.target)!!)) {
                     send("权限不足，无法对此用户[${it.target}]进行操作")
                     return
                 }
@@ -155,11 +155,38 @@ class GroupMangerListener {
     suspend fun GroupMessageEvent.kickPerson() =
         messageContent.messages.forEach {
             (it is At).then {
-                if (!botCompareToMember(group().member((it as At).target)!!)){
+                if (!botCompareToMember(group().member((it as At).target)!!)) {
                     send("权限不足，无法对此用户[${it.target}]进行操作")
                     return
                 }
                 (group().member(it.target) as MiraiMember).kick("芜湖，起飞")
+            }
+        }
+
+    /**
+     * 给予成员群头衔 bot必须为群主
+     * @receiver GroupMessageEvent
+     */
+    @RobotListen(
+        isBoot = true,
+        desc = "特殊头衔设置",
+        permission = RobotPermission.ADMINISTRATOR,
+        permissionsRequiredByTheRobot = RobotPermission.OWNER
+    )
+    @Filter("给", matchType = MatchType.TEXT_STARTS_WITH)
+    suspend fun GroupMessageEvent.setTitle() =
+        messageContent.messages.forEach {
+            (it is At).then {
+                (botPermission() != Permission.OWNER).then {
+                    send("头衔设置失败，bot权限不足")
+                    return@forEach
+                }
+                val event = this as MiraiGroupMessageEvent
+                val member = event.originalEvent.group[author().id.number]!!
+                val title = messageContent.plainText.split("给")[1]
+                member.specialTitle = title
+                send(At(author().id) + " 成功给予用户[${group().member((it as At).target)!!.nickOrUsername}]头衔：${title}".toText())
+
             }
         }
 

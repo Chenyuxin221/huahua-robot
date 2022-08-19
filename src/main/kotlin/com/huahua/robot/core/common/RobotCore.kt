@@ -1,13 +1,14 @@
 package com.huahua.robot.core.common
 
 
+import com.huahua.robot.config.Account
+import com.huahua.robot.config.Config
 import com.huahua.robot.core.mapper.GroupBootStateMapper
 import love.forte.simbot.ID
 import love.forte.simbot.bot.Bot
 import love.forte.simbot.bot.OriginBotManager
 import love.forte.simbot.event.EventListenerManager
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
@@ -46,20 +47,20 @@ class RobotCore (
 
     }
 
-    @Value("\${huahua.account.admin.id}")
-    private fun getAdminId(adminId: String) {
-        ADMINISTRATOR = adminId
-    }
-
-    @Value("\${huahua.account.bot.id}")
-    private fun getBotId(botId: String) {
-        BOTID = botId.ID
-    }
-
-    @Value("\${huahua.config.boot-command}")
-    private fun getBootCommandPath(path:String){
-        BOOTCOMMANDPATH = path
-    }
+//    @Value("\${huahua.account.admin.id}")
+//    private fun getAdminId(adminId: String) {
+//        ADMINISTRATOR = adminId
+//    }
+//
+//    @Value("\${huahua.account.bot.id}")
+//    private fun getBotId(botId: String) {
+//        BOTID = botId.ID
+//    }
+//
+//    @Value("\${huahua.config.bootCommand}")
+//    private fun getBootCommandPath(path:String){
+//        BOOTCOMMANDPATH = path
+//    }
 
 
     companion object {
@@ -94,17 +95,18 @@ class RobotCore (
         /**
          * 机器人管理员
          */
-        var ADMINISTRATOR: String = ""
+        var ADMINISTRATOR: String = Account.admin
 
         /**
          * 主机器人Id
          */
-        var BOTID: ID = "".ID
+        var BOTID: ID = Account.bot.ID
 
         /**
          * 运行脚本路径
          */
-        var BOOTCOMMANDPATH:String = ""
+        var BOOTCOMMANDPATH: String = Config.boot_Command
+
 
         /**
          * 用户Skey
@@ -119,7 +121,12 @@ class RobotCore (
         /**
          * 是否回复过消息
          */
-        var HaveReplied = hashMapOf<ID,Boolean>()
+        var HaveReplied = hashMapOf<ID, Boolean>()
+
+        /**
+         * 短链接状态
+         */
+        var ShortLinkState = true
 
 
         /**

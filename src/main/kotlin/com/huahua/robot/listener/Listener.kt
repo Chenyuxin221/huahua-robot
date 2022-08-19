@@ -25,10 +25,12 @@ import love.forte.simboot.filter.MatchType
 import love.forte.simbot.ID
 import love.forte.simbot.LoggerFactory
 import love.forte.simbot.action.sendIfSupport
+import love.forte.simbot.component.mirai.message.MiraiSendOnlyAudio
 import love.forte.simbot.event.FriendMessageEvent
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.event.MessageEvent
 import love.forte.simbot.message.*
+import love.forte.simbot.resources.FileResource
 import love.forte.simbot.resources.URLResource
 import love.forte.simbot.tryToLong
 import org.springframework.stereotype.Component
@@ -148,8 +150,7 @@ class Listener {
      */
     @RobotListen(isBoot = true, desc = "涩图服务")
     @Filter(value = "来点{{tags}}涩涩", matchType = MatchType.REGEX_MATCHES)
-    suspend fun MessageEvent.sendSetuToR18(@FilterValue("tags") tag: String) =
-        setu(tag.split(" "), true)
+    suspend fun MessageEvent.sendSetuToR18(@FilterValue("tags") tag: String) = setu(tag.split(" "), true)
 
 
     /**
@@ -168,8 +169,7 @@ class Listener {
      */
     @RobotListen(isBoot = true, desc = "涩图服务")
     @Filter(value = "来点涩涩", matchType = MatchType.REGEX_MATCHES)
-    suspend fun MessageEvent.sendSetuToR18() =
-        setu(listOf(), true)
+    suspend fun MessageEvent.sendSetuToR18() = setu(listOf(), true)
 
 
     /**
@@ -251,11 +251,10 @@ class Listener {
     suspend fun MessageEvent.repeat() {
         val msg = messageContent.plainText.trim()  // 获取消息内容
         Regex("^[\u4e00-\u9fa5]{0,}$").find(msg)?.value?.also {   // 判断是否为空
-            (msg.length in 3..4 && it.length in 3..4 && msg.contains("人"))
-                .then {    // 判断消息内容长度是否在3到4个字符且包含人
-                    val chars = msg.toCharArray().joinToString("  ")    // 将消息内容转换成字符数组并使用空格分隔
-                    send(chars)   // 发送消息
-                }
+            (msg.length in 3..4 && it.length in 3..4 && msg.contains("人")).then {    // 判断消息内容长度是否在3到4个字符且包含人
+                val chars = msg.toCharArray().joinToString("  ")    // 将消息内容转换成字符数组并使用空格分隔
+                send(chars)   // 发送消息
+            }
         }.isNull {  // 如果为空
             return  // 返回
         }
@@ -363,17 +362,80 @@ class Listener {
 
 
     @RobotListen(isBoot = true, desc = "听歌")
-    @Filter("来点音乐")
+    @Filter(".music")
     suspend fun MessageEvent.voiceMusic() {
         val api = "https://ovooa.com/API/changya/"
-        val body = HttpUtil.getBody(api)
+        var body = ""
+        var count = 1
+        while (count < 50) {
+            delay(500)
+            log.info("正在进行第${count}次请求")
+            val b = HttpUtil.getBody(api)
+            if (!b.contains("502")) {
+                body = b
+                log.info("请求成功，正在返回结果")
+                break
+            }
+            count++
+        }
+        if (body.isEmpty()) {
+            send("播放失败，未知错误")
+            return
+        }
         val json = JSON.parseObject(body)
         if (!json["code"].equals(1)) {
             return
         }
         val data = JSON.parseObject(json.getString("data"))
         val file = "${data.getString("song_name")}.mp3".getTempMusic(data.getString("song_url").url())
+        file.isNull {
+            send("文件下载失败了QAQ")
+            return
+        }
+        val music = MiraiSendOnlyAudio(FileResource(file!!))
+        send(music)!!.isSuccess.then { file.delete() }
     }
+
+    @RobotListen(isBoot = true, desc = "刷抖音")
+    @Filter("刷抖音")
+    suspend fun MessageEvent.douyin() {
+        val url = "https://xiaobai.klizi.cn/API/other/douyin.php"
+        val url2 = "https://api.linhun.vip/api/dwz?url="
+        val body = JSON.parseObject(HttpUtil.get(url).response)
+        log.info(body.toJSONString())
+        val str = """
+        Title：${body.getString("desc")}
+        Author：${body.getString("author")}
+        Video:  ${if (RobotCore.ShortLinkState) HttpUtil.getBody(url2 + body.getString("video")) else body.getString("video")}
+    """.trimIndent()
+        val message = buildMessages {
+            image(URLResource(body.getString("cover").url()))
+            text(str)
+        }
+        send(message)
+    }
+
+    @RobotListen(isBoot = true, desc = "短链接生成开关")
+    @Filter("{{state}}短链接", matchType = MatchType.REGEX_MATCHES)
+    suspend fun MessageEvent.setShortLink(@FilterValue("state") state: String) =
+        when (state) {
+            "设置", "打开", "开启" -> {
+                if (RobotCore.ShortLinkState) {
+                    send("已经是开启状态了~")
+                }
+                RobotCore.ShortLinkState = false
+            }
+
+            "取消", "关闭" -> {
+                if (!RobotCore.ShortLinkState) {
+                    send("已经是关闭状态了~")
+                }
+                RobotCore.ShortLinkState = true
+            }
+
+            else -> {}
+        }
+
 
     @RobotListen(isBoot = true, desc = "解析")
     @Filter("解析", matchType = MatchType.TEXT_STARTS_WITH)
@@ -386,50 +448,65 @@ class Listener {
             send("未匹配到链接")
             return
         }
-        val api = "https://api.caonm.net/api/dsp/api.php?url=$reg"
-        val body = HttpUtil.getBody(api)
+        val api1 = "https://api.caonm.net/api/dsp/api.php?url=$reg" //解析接口
+        val api2 = "https://api.linhun.vip/api/dwz?url="    // 短网址生成
+        val body = HttpUtil.getBody(api1)
         body.contains("404").then {
             send("解析失败")
             return
         }
         val result = JSON.parseObject(body)
-        (result.getIntValue("code") == 201).then {
-            send("不支持解析该链接")
-            return
-        }
-        (result.getIntValue("code") != 200).then {
-            send(result.getString("msg"))
-            return
+        when (result.getIntValue("code")) {   //状态码判断
+            200 -> log.info("解析成功")
+            201 -> {
+                send("不支持解析该链接")
+                return
+            }
+
+            else -> {
+                send(result.toJSONString())
+                return
+            }
         }
         val data = JSON.parseObject(result.getString("data"))
         var str = ""
-        if (reg!!.contains("douyin")) {
-            val music = JSON.parseObject(data.getString("music"))
-            str = """
-            Title: ${data.getString("title")},
-            Author: ${data.getString("author")},
-            Uid: ${data.getString("uid")}
-            Video_Url: ${data.getString("url")},
-            Bgm_Author: ${music.getString("author")}
-            Bgm_Url: ${music.getString("url")}
-        """.trimIndent()
-        }   //抖音分享解析
-        if (reg.contains("kuaishou")) {
-            str = """
-            Title: ${data.getString("title")},
-            Author: ${data.getString("author")},
-            Video_Url: ${data.getString("url")},
-        """.trimIndent()
-        }   //快手分享解析
-        if (reg.contains("xiaochuankeji")) {
-            str = """
-            Title: ${data.getString("title")},
-            Author: ${data.getString("author")},
-            Video_Url: ${data.getString("url")},
-        """.trimIndent()
-        }   //最右分享解析
-        str.isEmpty().then {    //为空说明不在解析列表里面
-            return
+        var url = data.getString("url")
+        RobotCore.ShortLinkState.then {
+            url = HttpUtil.getBody(api2 + url)
+        }
+        when {
+            reg!!.contains("douyin") -> {       //抖音解析
+                val music = JSON.parseObject(data.getString("music"))
+                str = """
+                    Title: ${data.getString("title")},
+                    Author: ${data.getString("author")},
+                    Uid: ${data.getString("uid")},
+                    Video_Url: ${url},
+                    Bgm_Author: ${music.getString("author")},
+                    Bgm_Url: ${
+                    if (RobotCore.ShortLinkState) HttpUtil.getBody(api2 + music.getString("url")) else music.getString(
+                        "url"
+                    )
+                }
+                """.trimIndent()
+            }
+
+            reg.contains("kuaishou") -> {   //快手解析
+                str = """
+                    Title: ${data.getString("title")},
+                    Author: ${data.getString("author")},
+                    Video_Url: ${url},
+                """.trimIndent()
+            }
+
+            reg.contains("xiaochuankeji") -> {   //最右解析
+                str = """
+                    Title: ${data.getString("title")},
+                    Author: ${data.getString("author")},
+                    Video_Url: ${url},
+                """.trimIndent()
+            }
+
         }
         val message = buildMessages {
             image(URLResource(data.getString("cover").url()))

@@ -38,7 +38,7 @@ import kotlin.time.Duration.Companion.minutes
  * @date 2022-06-13 17:34
  */
 @Beans
-class GroupListener {
+open class GroupListener {
 
     private val lotteryPrefix: List<String> = listOf("chou", "cou", "c", "抽", "操", "艹", "草")    //抽奖前缀
     private val lotterySuffix: List<String> = listOf("jiang", "j", "奖", "wo", "w", "我") // 抽奖后缀
@@ -338,9 +338,10 @@ class GroupListener {
         log.info("AT数量 ：${atList.size}")
         when (atList.size) {
             1 -> {
-                var atName = group().member(atList[0])!!.nickOrUsername
+                var atName = group().member(atList[0])?.nickOrUsername
+                atName.isNullOrEmpty().then { return }
                 var autherName = author().nickOrUsername
-                if (atName.length > 6) atName = group().member(atList[0])!!.username
+                if (atName!!.length > 6) atName = group().member(atList[0])!!.username
                 if (autherName.length > 6) autherName = author().username
                 if (atName.length > 6) atName = atName.substring(0, 6)
                 if (autherName.length > 6) autherName = autherName.substring(0, 6)

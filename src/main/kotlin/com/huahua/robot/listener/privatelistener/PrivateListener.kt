@@ -60,7 +60,9 @@ class PrivateListener {
     @RobotListen(desc = "重启服务")
     @Filter(".restart")
     suspend fun FriendMessageEvent.restartBot() {
+        RobotCore.BOOTCOMMANDPATH.isEmpty().then { return }
         (friend().id == RobotCore.ADMINISTRATOR.ID).then {
+            send("正在重启")
             val command = "CMD /C START CMD /K ${RobotCore.BOOTCOMMANDPATH}"
             Runtime.getRuntime().exec(command)
             exitProcess(0)
@@ -106,8 +108,7 @@ class PrivateListener {
             log.error("请前往配置环境变量，变量名为 STARTUP, 值为系统启动目录")
             return false
         }
-        val bootFile = "F:\\botRunner\\bot.bat"
-        val fileName = File(bootFile).name
+        val fileName = File(RobotCore.BOOTCOMMANDPATH).name
         val files = File(startupPath).listFiles()
         var boolean = false
         if (files != null && files.isNotEmpty()) {
@@ -119,7 +120,7 @@ class PrivateListener {
         }
         boolean.not().then {
             val link = Paths.get("${startupPath}\\${fileName}")
-            val file = Paths.get(bootFile)
+            val file = Paths.get(RobotCore.BOOTCOMMANDPATH)
             try {
                 withContext(Dispatchers.IO) {
                     Files.createSymbolicLink(link, file)

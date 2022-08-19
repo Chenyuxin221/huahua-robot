@@ -78,8 +78,17 @@ spring.datasource.username=用户名
 spring.datasource.password=用户密码
 huahua.account.admin.id=管理员QQ号
 huahua.account.bot.id=BotQQ号
+#可选
 huahua.config.boot-command=“启动文件路径”
+#可选(涩图检测)
+huahua.config.exclude_Groups=123,456 #过滤掉话多的群，钱多可以不用
+huahua.config.baidubce.client_id=百度ai Api Key
+huahua.config.baidubce.client_secret=百度ai Secret KEY
 ```
+
+#### 付费接口地址
+
+[百度AI平台](https://ai.baidu.com/ai-doc/ANTIPORN/Wkhu9d5iy)
 
 #### 例：启动文件.bat
 

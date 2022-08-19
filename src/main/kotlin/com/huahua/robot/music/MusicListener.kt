@@ -18,6 +18,7 @@ import com.huahua.robot.utils.MessageUtil.Companion.getKugouMusicShare
 import com.huahua.robot.utils.MessageUtil.Companion.getNeteaseCloudMusicShare
 import com.huahua.robot.utils.MessageUtil.Companion.getQQMusicShare
 import com.huahua.robot.utils.PostType
+import com.huahua.robot.utils.UrlUtil
 import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
@@ -25,7 +26,6 @@ import love.forte.simboot.filter.MatchType
 import love.forte.simbot.LoggerFactory
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.event.MessageEvent
-import org.springframework.stereotype.Component
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.jvm.jvmName
 
@@ -38,10 +38,10 @@ import kotlin.reflect.jvm.jvmName
 @Beans
 class MusicListener {
     private val log = LoggerFactory.getLogger(MusicListener::class.jvmName) // 获取日志记录器
-    private val listTip = "\n---------------------\n" +
+    private val listTip = "\n--------------------\n" +
             "请输入序号or播放+序号进行播放\n" +
             "或者输入下载+序号获取下载链接\n" +
-            "---------------------\n"   // 列表提示
+            "--------------------\n"   // 列表提示
     private val downloadTip = "下载地址（复制到浏览器下载）：\n"   // 下载提示
     private val uin = RobotCore.ADMINISTRATOR
     private val skey = RobotCore.Skey
@@ -142,22 +142,22 @@ class MusicListener {
         name: String,
     ): Boolean {
         var url =
-            "https://api.klizi.cn/API/music/vipqqyy.php?msg=${name}&uin=${uin}&skey=${skey}"
+            "https://xiaobai.klizi.cn/API/music/vipqqyy.php?msg=${name}&uin=${uin}&skey=${skey}"
         val musicList = HttpUtil.getBody(url)   // 获取歌曲列表
         if (listIsContainsName) {   // 判断是否需要跳转
             if (!musicList.contains(name.split(" ")[0])) {    // 判断列表是否包含歌名
                 return false    // 无结果返回false
             }
         }
-        if (musicList.isEmpty()) { // 如果歌曲列表为空
-            send("QQ音乐搜索失败") // 发送消息
+        if (musicList.isEmpty() || musicList.contains("搜索失败")) { // 如果歌曲列表为空
+            send("搜索失败，无搜索结果") // 发送消息
         }
         val pattern = """^(?:下载|播放)?\s*(\d*)$"""    // 正则表达式
         val text = sendAndWait("${musicList}${listTip}", 30, TimeUnit.SECONDS, Regex(pattern))?.plainText   // 发送消息并等待回复
         text?.also { // 如果不为空
             Regex(pattern).find(text)?.groups?.get(1)?.value?.let { // 如果不为空
-                var music =HttpUtil.getJsonClassFromUrl("${url}&n=${it.toInt()}", QQMusic::class.java).data   // 获取歌曲
-                if (music!=null &&music.music.isEmpty()) {    // 如果歌曲为空
+                var music = HttpUtil.getJsonClassFromUrl("${url}&n=${it.toInt()}", QQMusic::class.java).data   // 获取歌曲
+                if (music != null && music.music.isEmpty()) {    // 如果歌曲为空
                     send("skey失效，请重新登录")  // 发送消息
                     userLogin() // 重新登录
                     url =
@@ -218,7 +218,7 @@ class MusicListener {
                         musicInfo = JSON.parseObject(JSON.parseObject(result1)["data"].toString())
                     }
                     -201 -> {
-                        println(jb.toJSONString())
+                        log.error(jb.toJSONString())
                         send("无搜索结果...正在切换")
                         return false
                     }
@@ -281,10 +281,13 @@ class MusicListener {
     private suspend fun MessageEvent.neteaseMusic(
         name: String,
     ): Boolean {
-
-        val url = "https://api.klizi.cn/API/music/netease.php?msg=$name"
-        val response = HttpUtil.getBody(url)    // 获取歌曲列表
-        val musicList = response.substring(0, response.length - 12).trim()  // 获取歌曲列表
+        val url = "https://xiaobai.klizi.cn/API/music/netease.php?msg=${UrlUtil.encode(name)}"
+        val result = HttpUtil.get(url)    // 获取歌曲列表
+        if (result.response.isEmpty()) {
+            send("列表为空")
+            return false
+        }
+        val musicList = result.response.substring(0, result.response.length - 12).trim()  // 获取歌曲列表
         if (musicList.isEmpty() || musicList == " " || musicList.contains("搜索不到")) {   // 如果歌曲列表为空
             send("没有找到相关歌曲") // 发送消息
             return false
@@ -323,6 +326,7 @@ class MusicListener {
             return
         }
         val ls = "${list.data.joinToString("\n") { "${it.name} --${it.singer}" }}\n$listTip"
+        log.debug(ls)
         val pattern = """^(?:下载|播放)?\s*(\d*)$"""
         val text = sendAndWait(ls, 30, TimeUnit.SECONDS, Regex(pattern))?.plainText
         text?.also {
