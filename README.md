@@ -6,7 +6,7 @@
     	</h2>
 </div>
 
-该项目为Springboot项目，此项目基于[simbot3](https://github.com/simple-robot/simbot-component-mirai)，实现了其中的mirai组件
+该项目为Springboot项目，此项目基于[simple bot v3](https://github.com/simple-robot/simbot-component-mirai)，实现了其中的mirai组件
 
 ## 项目文档
 
@@ -52,15 +52,32 @@ bot.bot
     "type": "md5_text",
     "md5": "使用md5加密后的bot密码"
   },
-  "deviceInfoSeed": 1,
-  "workingDir": ".",
-  "heartbeatPeriodMillis": 60000,
-  "statHeartbeatPeriodMillis": 300000,
-  "heartbeatTimeoutMillis": 5000,
-  "heartbeatStrategy": "STAT_HB",
-  "reconnectionRetryTimes": 2147483647,
-  "autoReconnectOnForceOffline": false,
-  "protocol": "ANDROID_PHONE"
+  "config": {
+    "workingDir": ".",
+    "heartbeatPeriodMillis": 60000,
+    "statHeartbeatPeriodMillis": 300000,
+    "heartbeatTimeoutMillis": 5000,
+    "heartbeatStrategy": "STAT_HB",
+    "reconnectionRetryTimes": 2147483647,
+    "autoReconnectOnForceOffline": false,
+    "protocol": "ANDROID_PAD",
+    "highwayUploadCoroutineCount": 16,
+    "deviceInfo": {
+      "type": "auto"
+    },
+    "noNetworkLog": false,
+    "noBotLog": false,
+    "isShowingVerboseEventLog": false,
+    "cacheDir": "cache",
+    "contactListCache": {
+      "saveIntervalMillis": 60000,
+      "friendListCacheEnabled": false,
+      "groupMemberListCacheEnabled": false
+    },
+    "loginCacheEnabled": true,
+    "convertLineSeparator": true,
+    "recallMessageCacheStrategy": "MEMORY_LRU"
+  }
 }
 ```
 
@@ -80,6 +97,7 @@ huahua.account.admin.id=管理员QQ号
 huahua.account.bot.id=BotQQ号
 #可选
 huahua.config.boot-command=“启动文件路径”
+huahua.config.morningPaper.groups=123,456,789 #需要每日早报的群
 #可选(涩图检测)
 huahua.config.exclude_Groups=123,456 #过滤掉话多的群，钱多可以不用
 huahua.config.baidubce.client_id=百度ai Api Key
