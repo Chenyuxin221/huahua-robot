@@ -4,7 +4,6 @@ package com.huahua.robot.listener.grouplistener
 import com.huahua.robot.core.annotation.RobotListen
 import love.forte.di.annotation.Beans
 import love.forte.simbot.component.mirai.event.MiraiMemberLeaveEvent
-import org.springframework.stereotype.Component
 
 /**
  * ClassName: GroupMemberLeaveListener  退群监听器
@@ -25,9 +24,9 @@ class GroupMemberLeaveListener {
         val operator = operator()
         group().send("就在刚刚,${user.nickOrUsername}离开了我们")
         if (operator===user){
-            group().send("他是自己退群的呢，走的时候很安详")
+            group().send("啊这...他是自己退群的啊，那没事了")
         }else{
-            group().send("嗯？他是被${operator.nickOrUsername}踢出群的呢，走的时候很不甘心")
+            group().send("嗯？他是触犯天条被${operator.nickOrUsername}移出去的")
         }
     }
 }

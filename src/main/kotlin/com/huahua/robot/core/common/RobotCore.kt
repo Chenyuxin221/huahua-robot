@@ -47,22 +47,6 @@ class RobotCore (
 
     }
 
-//    @Value("\${huahua.account.admin.id}")
-//    private fun getAdminId(adminId: String) {
-//        ADMINISTRATOR = adminId
-//    }
-//
-//    @Value("\${huahua.account.bot.id}")
-//    private fun getBotId(botId: String) {
-//        BOTID = botId.ID
-//    }
-//
-//    @Value("\${huahua.config.bootCommand}")
-//    private fun getBootCommandPath(path:String){
-//        BOOTCOMMANDPATH = path
-//    }
-
-
     companion object {
         var applicationContext: ApplicationContext? = null
 
@@ -105,7 +89,7 @@ class RobotCore (
         /**
          * 运行脚本路径
          */
-        var BOOTCOMMANDPATH: String = Config.boot_Command
+        var BOOTCOMMANDPATH: String = Config.boot_command
 
 
         /**
@@ -181,3 +165,4 @@ inline fun Boolean?.onElse(block: () -> Unit): Boolean = this.let {
 }
 
 inline operator fun Boolean?.minus(block: () -> Unit) = this.onElse(block)
+

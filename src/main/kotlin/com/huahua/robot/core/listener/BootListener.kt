@@ -4,12 +4,10 @@ import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.RobotCore
 import com.huahua.robot.core.common.logger
 import com.huahua.robot.core.entity.BootState
-
 import com.huahua.robot.core.enums.RobotPermission
 import com.huahua.robot.core.mapper.GroupBootStateMapper
 import love.forte.simboot.annotation.Filter
 import love.forte.simbot.event.GroupMessageEvent
-
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
@@ -59,12 +57,11 @@ class BootListener {
         map["group_code"] = groupCode
         val groupBootState = mapper.selectByMap(map)?.firstOrNull()
 
-
         if (groupBootState == null) {
             mapper.insert(BootState(groupCode = groupCode,state = state))
 
         } else {
-            mapper.updateById(BootState(groupCode = groupCode,state = state))
+            mapper.updateById(BootState(groupBootState.id, groupCode, state))
 
         }
     }

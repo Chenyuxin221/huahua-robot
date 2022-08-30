@@ -12,6 +12,8 @@ import com.huahua.robot.music.entity.kugoumusic.music.KugouMusic
 import com.huahua.robot.music.entity.neteasemusic.NeteaseMusic
 import com.huahua.robot.music.entity.qqmusic.QQMusic
 import com.huahua.robot.music.util.Cookie
+import com.huahua.robot.utils.FileUtil.getTempMusic
+import com.huahua.robot.utils.FileUtil.url
 import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.MessageUtil
 import com.huahua.robot.utils.MessageUtil.Companion.getKugouMusicShare
@@ -24,8 +26,10 @@ import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
 import love.forte.simbot.LoggerFactory
+import love.forte.simbot.component.mirai.message.MiraiSendOnlyAudio
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.event.MessageEvent
+import love.forte.simbot.resources.Resource.Companion.toResource
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.jvm.jvmName
 
@@ -297,17 +301,31 @@ class MusicListener {
         text?.also {
             Regex(pattern).find(text)?.groups?.get(1)?.value?.let { // 如果不为空
                 val music = HttpUtil.getJsonClassFromUrl("${url}&n=${it.toInt()}", NeteaseMusic::class.java)    // 获取歌曲
+                println(music)
                 when {
                     text.startsWith("下载") -> send("${downloadTip}${music.url}")  // 发送下载提示
                     else -> {   // 如果不是下载
-                        val share = getNeteaseCloudMusicShare(
-                            music.song,
-                            music.singer,
-                            "https://music.163.com/#/song?id=${music.url.split("=")[1]}",
-                            music.img,
-                            music.url
-                        ) // 获取分享卡片
-                        send(share) // 发送卡片
+                        try {
+                            val share = getNeteaseCloudMusicShare(
+                                music.song,
+                                music.singer,
+                                "https://music.163.com/#/song?id=${music.url.split("=")[1]}",
+                                music.img,
+                                music.url
+                            ) // 获取分享卡片
+                            send(share) // 发送卡片
+                        } catch (e: IndexOutOfBoundsException) {
+                            val file = "${music.song}.mp3".getTempMusic(music.url.url())
+                            file.isNull {
+                                send("哎呀，加载失败啦")
+                                return false
+                            }
+                            file!!.also { f ->
+                                send(MiraiSendOnlyAudio(f.toResource()))
+                            }.delete()
+                        } catch (e: Exception) {
+                            send(e.printStackTrace())
+                        }
                     }
 
                 }

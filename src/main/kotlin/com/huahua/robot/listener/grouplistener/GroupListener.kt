@@ -22,6 +22,7 @@ import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
 import love.forte.simbot.ID
 import love.forte.simbot.LoggerFactory
+import love.forte.simbot.component.mirai.bot.MiraiBot
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.message.At
 import love.forte.simbot.message.Message
@@ -38,11 +39,42 @@ import kotlin.time.Duration.Companion.minutes
  * @date 2022-06-13 17:34
  */
 @Beans
-open class GroupListener {
+class GroupListener {
 
     private val lotteryPrefix: List<String> = listOf("chou", "cou", "c", "抽", "操", "艹", "草")    //抽奖前缀
     private val lotterySuffix: List<String> = listOf("jiang", "j", "奖", "wo", "w", "我") // 抽奖后缀
     private val log = LoggerFactory.getLogger(GroupListener::class.java)
+
+    /**
+     * 获取bot的skey pskey
+     * @receiver GroupMessageEvent
+     */
+    fun GroupMessageEvent.getPsKey() {
+        val bot = (bot as MiraiBot).originalBot
+        val client = bot.javaClass.getMethod("getClient").invoke(bot)
+        val wLoginSigInfo = client.javaClass.getMethod("getWLoginSigInfo").invoke(client)
+        val sKey = wLoginSigInfo.javaClass.getDeclaredMethod("getSKey").invoke(wLoginSigInfo)
+        val psKeyMap = wLoginSigInfo.javaClass.getDeclaredMethod("getPsKeyMap").invoke(wLoginSigInfo) as HashMap<*, *>
+        val map = hashMapOf<String, String>()
+
+        map["psKey"] = (psKeyMap["vip.qq.com"]?.getFieldValue("data") as ByteArray).decodeToString()
+        map["sKey"] = (sKey.getFieldValue("data") as ByteArray).decodeToString()
+    }
+
+    fun Any.getFieldValue(fieldName: String): Any {
+        return javaClass.getDeclaredField(fieldName).let {
+            it.isAccessible = true
+            it.get(this)
+        }
+    }
+
+    fun Any.invoke(methodName: String, vararg args: Any): Any {
+        return javaClass.getDeclaredMethod(methodName).let {
+            it.isAccessible = true
+            if (it.parameterCount > 0) it.invoke(this, args)
+            else it.invoke(this)
+        }
+    }
 
     /**
      * 抽奖
@@ -57,6 +89,12 @@ open class GroupListener {
     suspend fun GroupMessageEvent.luckDraw() {
         val msg = messageContent.plainText  // 获取消息内容
         var time = 0
+        val url =
+            """((http|ftp|https)://)(([a-zA-Z0-9._-]+\.[a-zA-Z]{2,6})|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,4})*(/[a-zA-Z0-9&%_./-~-]*)?""".toRegex()
+                .find(input = msg)?.value
+        if (url != null) {
+            return
+        }
         if (msg.contains("连抽")) {
             var reg = """\d+""".toRegex().find(input = msg)?.value
             var result = 0

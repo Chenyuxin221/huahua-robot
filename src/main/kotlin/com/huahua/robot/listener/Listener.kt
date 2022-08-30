@@ -31,9 +31,11 @@ import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.event.MessageEvent
 import love.forte.simbot.message.*
 import love.forte.simbot.resources.FileResource
+import love.forte.simbot.resources.Resource.Companion.toResource
 import love.forte.simbot.resources.URLResource
 import love.forte.simbot.tryToLong
 import org.springframework.stereotype.Component
+import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.jvm.jvmName
 import kotlin.system.exitProcess
@@ -394,6 +396,44 @@ class Listener {
         }
         val music = MiraiSendOnlyAudio(FileResource(file!!))
         send(music)!!.isSuccess.then { file.delete() }
+    }
+
+    @RobotListen(isBoot = true, desc = "听歌")
+    @Filter(".music {{name}}", matchType = MatchType.REGEX_MATCHES)
+    suspend fun MessageEvent.appointVoiceMusic(@FilterValue("name") name: String) {
+        name.isEmpty().then { return }
+        var url = "https://xiaobapi.top/api/xb/api/cg.php?msg=${UrlUtil.encode(name)}"
+        val musicList = HttpUtil.get(url).response.split("\\n")
+        val text = sendAndWait("${musicList.joinToString("\n")}\t请输入序号选择", 30, TimeUnit.SECONDS)?.plainText
+        text?.also {
+            val num = Regex("""\d+""").find(text)?.value
+            num.isNull { return }
+            if (num!!.toInt() > musicList.size || num.toInt() <= 0) {
+                send("输入范围为1-${musicList.size - 1}，请重新点歌")
+                return
+            }
+            url += "&n=$num"
+            val file = "${name}.mp3".getTempMusic(url.url())
+            file?.also {
+                send(MiraiSendOnlyAudio(it.toResource()))
+            }.isNull {
+                send("哎呀，歌曲下载失败啦")
+                return
+            }!!.delete()
+        }
+    }
+
+    @RobotListen(isBoot = true, desc = "冒泡")
+    suspend fun MessageEvent.aNaoDai() {
+        val n = Random().nextInt(100)
+        val url = "https://xiaobapi.top/api/xb/api/and.php"
+        if (n == 50) {
+            val file = "啊脑袋.mp3".getTempMusic(url.url())
+            file.isNull { return }
+            file!!.also {
+                send(MiraiSendOnlyAudio(it.toResource()))
+            }.delete()
+        }
     }
 
     @RobotListen(isBoot = true, desc = "刷抖音")

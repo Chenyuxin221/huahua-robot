@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component
  */
 @Component
 class Config {
-    fun setBoot_Conmmand(str: String) {
-        boot_Command = str
+    fun setBoot_conmmand(str: String) {
+        boot_command = str
     }
 
     fun setExclude_Groups(arrayList: ArrayList<String>) {
@@ -25,7 +25,7 @@ class Config {
     }
 
     companion object {
-        var boot_Command: String = ""
+        var boot_command: String = ""
         var exclude_groups: ArrayList<String> = arrayListOf()
         var baidubce: Baidubce? = null
     }
