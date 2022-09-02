@@ -3,6 +3,7 @@
 package com.huahua.robot.listener
 
 import com.alibaba.fastjson2.JSON
+import com.alibaba.fastjson2.JSONObject
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.*
 import com.huahua.robot.entity.Chat
@@ -65,7 +66,7 @@ class Listener {
      * @receiver GroupMessageEvent
      */
     @RobotListen(isBoot = true, desc = "写真服务")
-    @Filter(value = "来点好看的|来点好康的", matchType = MatchType.REGEX_CONTAINS)
+    @Filter(value = "来点好看的|来点好康的", matchType = MatchType.REGEX_MATCHES)
     suspend fun MessageEvent.setu() {
         val url = "http://localhost:8080/api/photo"
         val imageList = arrayListOf<String>()
@@ -491,11 +492,13 @@ class Listener {
         val api1 = "https://api.caonm.net/api/dsp/api.php?url=$reg" //解析接口
         val api2 = "https://api.linhun.vip/api/dwz?url="    // 短网址生成
         val body = HttpUtil.getBody(api1)
-        body.contains("404").then {
+        val result: JSONObject
+        try {
+            result = JSON.parseObject(body)
+        } catch (e: Exception) {
             send("解析失败")
             return
         }
-        val result = JSON.parseObject(body)
         when (result.getIntValue("code")) {   //状态码判断
             200 -> log.info("解析成功")
             201 -> {
