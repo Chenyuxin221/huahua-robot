@@ -110,7 +110,7 @@ class RobotCore (
         /**
          * 短链接状态
          */
-        var ShortLinkState = true
+        var ShortLinkState = false
 
 
         /**

@@ -119,6 +119,12 @@ java -jar "你打包好后的jar包"
 
 执行[sql](./src/main/resources/sql)目录下的*.sql文件
 
+### 插件
+
+#### 原神抽卡模拟（如不需要请自行删除[GenshinPrayListener](./src/main/kotlin/com/huahua/robot/listener/grouplistener/GenshinPrayListener.kt)）
+
+[插件地址](https://github.com/GardenHamster/GenshinPray/blob/main/Document.md)
+
 ### 运行Bot
 
 运行[HuahuaRobotApplication.kt](./src/main/kotlin/com/huahua/robot/HuahuaRobotApplication.kt)文件

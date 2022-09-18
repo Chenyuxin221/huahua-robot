@@ -357,7 +357,7 @@ class Listener {
                     send("喵喵喵？")
                     return
                 }
-                send(reply)  // 发送消息
+                reply(reply)  // 发送消息
             }  // 发送消息
 
         }
@@ -441,13 +441,15 @@ class Listener {
     @Filter("刷抖音")
     suspend fun MessageEvent.douyin() {
         val url = "https://xiaobai.klizi.cn/API/other/douyin.php"
-        val url2 = "https://api.linhun.vip/api/dwz?url="
+
         val body = JSON.parseObject(HttpUtil.get(url).response)
         log.info(body.toJSONString())
+        val video = if (RobotCore.ShortLinkState) getShortLinkUrl(body.getString("video"), 2)
+            ?: body.getString("video") else body.getString("video")
         val str = """
         Title：${body.getString("desc")}
         Author：${body.getString("author")}
-        Video:  ${if (RobotCore.ShortLinkState) HttpUtil.getBody(url2 + body.getString("video")) else body.getString("video")}
+        Video:  $video
     """.trimIndent()
         val message = buildMessages {
             image(URLResource(body.getString("cover").url()))
@@ -464,18 +466,49 @@ class Listener {
                 if (RobotCore.ShortLinkState) {
                     send("已经是开启状态了~")
                 }
-                RobotCore.ShortLinkState = false
+                RobotCore.ShortLinkState = true
             }
 
             "取消", "关闭" -> {
                 if (!RobotCore.ShortLinkState) {
                     send("已经是关闭状态了~")
                 }
-                RobotCore.ShortLinkState = true
+                RobotCore.ShortLinkState = false
             }
 
             else -> {}
         }
+
+    private fun getShortLinkUrl(url: String, type: Int, separator: String = ""): String? {
+        when (type) {
+            1 -> {
+                val url1 =
+                    "https://api.linhun.vip/api/dwz?url=${if (separator.isEmpty()) url else url.split(separator)[0]}"
+                return HttpUtil.getBody(url1)
+            }
+
+            2 -> {
+                val appid = "sqnmugmnspqditkh"
+                val appSecret = "akw0SkhCOVoweWhWT3FQQ3dJNHgxUT09"
+                val urlEncode = Base64.getUrlEncoder()
+                    .encodeToString((if (separator.isEmpty()) url else url.split(separator)[0]).toByteArray())
+                val url1 =
+                    "https://www.mxnzp.com/api/shortlink/create?url=${urlEncode}&app_id=${appid}&app_secret=${appSecret}"
+                log.error(url1)
+                val body: JSONObject?
+                try {
+                    body = JSON.parseObject(HttpUtil.getBody(url1))
+                } catch (e: Exception) {
+                    return null
+                }
+                body.isNull { return null }
+                (body!!.getIntValue("code") != 1).then { return null }
+                val data = JSON.parseObject(body.getString("data"))
+                return data.getString("shortUrl")
+            }
+        }
+        return null
+    }
 
 
     @RobotListen(isBoot = true, desc = "解析")
@@ -490,7 +523,6 @@ class Listener {
             return
         }
         val api1 = "https://api.caonm.net/api/dsp/api.php?url=$reg" //解析接口
-        val api2 = "https://api.linhun.vip/api/dwz?url="    // 短网址生成
         val body = HttpUtil.getBody(api1)
         val result: JSONObject
         try {
@@ -513,24 +545,20 @@ class Listener {
         }
         val data = JSON.parseObject(result.getString("data"))
         var str = ""
-        var url = data.getString("url")
-        RobotCore.ShortLinkState.then {
-            url = HttpUtil.getBody(api2 + url)
-        }
+        val url = if (RobotCore.ShortLinkState) getShortLinkUrl(data.getString("url"), 2, "?")
+            ?: data.getString("url") else data.getString("url")
         when {
             reg!!.contains("douyin") -> {       //抖音解析
                 val music = JSON.parseObject(data.getString("music"))
+                val bgmUrl = if (RobotCore.ShortLinkState) getShortLinkUrl(music.getString("url"), 2)
+                    ?: music.getString("url") else music.getString("url")
                 str = """
                     Title: ${data.getString("title")},
                     Author: ${data.getString("author")},
                     Uid: ${data.getString("uid")},
                     Video_Url: ${url},
                     Bgm_Author: ${music.getString("author")},
-                    Bgm_Url: ${
-                    if (RobotCore.ShortLinkState) HttpUtil.getBody(api2 + music.getString("url")) else music.getString(
-                        "url"
-                    )
-                }
+                    Bgm_Url: ${bgmUrl}
                 """.trimIndent()
             }
 

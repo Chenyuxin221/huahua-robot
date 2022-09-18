@@ -17,6 +17,7 @@ import love.forte.simbot.message.At
 import love.forte.simbot.message.buildMessages
 import love.forte.simbot.message.plus
 import love.forte.simbot.message.toText
+import love.forte.simbot.tryToLong
 import kotlin.time.Duration.Companion.minutes
 
 
@@ -173,21 +174,20 @@ class GroupMangerListener {
         permission = RobotPermission.ADMINISTRATOR,
         permissionsRequiredByTheRobot = RobotPermission.OWNER
     )
-    @Filter("给", matchType = MatchType.TEXT_STARTS_WITH)
+    @Filter("给头衔", matchType = MatchType.TEXT_STARTS_WITH)
     suspend fun GroupMessageEvent.setTitle() =
         messageContent.messages.forEach {
-            (it is At).then {
+            if (it is At) {
                 (botPermission() != Permission.OWNER).then {
                     send("头衔设置失败，bot权限不足")
                     return@forEach
                 }
                 val event = this as MiraiGroupMessageEvent
-                val member = event.originalEvent.group[author().id.number]!!
-                val title = messageContent.plainText.split("给")[1]
+                val member = event.originalEvent.group[it.target.tryToLong()]!!
+                val title = messageContent.plainText.split("给头衔")[1].trim()
                 member.specialTitle = title
                 send(At(author().id) + " 成功给予用户[${group().member((it as At).target)!!.nickOrUsername}]头衔：${title}".toText())
 
             }
         }
-
 }

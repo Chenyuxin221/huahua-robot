@@ -15,19 +15,24 @@ import com.huahua.robot.utils.MessageUtil.Companion.getImageMessage
 import com.huahua.robot.utils.Permission
 import com.huahua.robot.utils.PermissionUtil.Companion.authorPermission
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
+import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToMember
 import com.huahua.robot.utils.PermissionUtil.Companion.botPermission
 import com.huahua.robot.utils.PostType
 import com.huahua.robot.utils.TimeUtil
 import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
+import love.forte.simboot.annotation.FilterValue
+import love.forte.simboot.filter.MatchType
 import love.forte.simbot.ID
 import love.forte.simbot.LoggerFactory
 import love.forte.simbot.component.mirai.bot.MiraiBot
+import love.forte.simbot.component.mirai.event.MiraiGroupMessageEvent
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.message.At
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.plus
 import love.forte.simbot.message.toText
+import love.forte.simbot.utils.item.toList
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.minutes
@@ -124,7 +129,8 @@ class GroupListener {
                 }
             } else if (botPermission() == Permission.ADMINISTRATORS &&
                 authorPermission() == Permission.OWNER ||
-                authorPermission() == Permission.ADMINISTRATORS) {
+                authorPermission() == Permission.ADMINISTRATORS
+            ) {
                 send(At(author().id) + " 你抽个屁的奖".toText())  // 发送消息
             } else {
                 send("哎呀，无法奖励你~权限不够呢")  // 发送消息
@@ -156,10 +162,42 @@ class GroupListener {
                 authorPermission() == Permission.OWNER ||
                 authorPermission() == Permission.ADMINISTRATORS
             ) { // 没有禁言权限但是bot有管理员权限
+                messageContent.messages.forEach {
+                    if (it is At) {
+                        if (botCompareToMember(group().member(it.target)!!)) {
+                            group().member(it.target)!!.mute((lucky.time * lucky.multiple).minutes)
+                            send(At(it.target) + " 恭喜你，${author().nickOrUsername}帮你抽中了${lucky.time * lucky.multiple}分钟".toText())
+                        } else {
+                            send(At(author().id) + " 哎呀，无法帮${group().member(it.target)!!.nickOrUsername}抽奖，权限不够呢".toText())
+                        }
+                        return
+                    }
+                }
                 send(At(author().id) + " 你抽个屁的奖".toText())  // 发送消息
             } else {  //  没有禁言权限也没有管理员权限 也就是bot为普通成员
                 send("哎呀，无法奖励你~权限不够呢")  // 发送消息
             }
+    }
+
+    @RobotListen
+    @Filter(".lucky")
+    suspend fun GroupMessageEvent.randomMute() {
+        if (authorPermission() == Permission.MEMBER) {
+            send("抽奖失败，你的权限不足")
+            return
+        }
+        val probability = 1 / group().currentMember.toFloat() * 100
+        val members = group().members.toList()
+        var luckyNumber = Random().nextInt(members.size)
+        var luckyDog = members[luckyNumber]
+        if (botCompareToMember(luckyDog)) {
+            luckyDog.mute((5).minutes)
+            send("${luckyDog.nickOrUsername} 成为了幸运观众，中奖概率为 1/${group().currentMember}".toText())
+        } else {
+            luckyNumber = Random().nextInt(members.size)
+            luckyDog = members[luckyNumber]
+            send("${luckyDog.nickOrUsername} 成为了幸运观众，中奖概率为 1/${group().currentMember}".toText())
+        }
     }
 
 
@@ -450,6 +488,21 @@ class GroupListener {
         } else {
             send("请求失败，请稍后再试")
         }
+    }
+
+    @RobotListen("自助头衔", isBoot = true)
+    @Filter("头衔{{title}}", matchType = MatchType.REGEX_MATCHES)
+    suspend fun GroupMessageEvent.receiveTitle(@FilterValue("title") title: String) {
+        (botPermission() != Permission.OWNER).then { return }
+        log.error(title)
+        if (title.encodeToByteArray().size > 18) {
+            send("哎呀，太长啦，怼不进去")
+            return
+        }
+        val event = this as MiraiGroupMessageEvent
+        val member = event.originalEvent.group[author().id.number]
+        member!!.specialTitle = title
+        reply("头衔「${title}」拿好哦")
     }
 
 }
