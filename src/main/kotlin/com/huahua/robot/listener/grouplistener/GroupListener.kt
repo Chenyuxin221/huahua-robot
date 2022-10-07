@@ -8,17 +8,14 @@ import com.huahua.robot.core.common.send
 import com.huahua.robot.core.common.then
 import com.huahua.robot.core.enums.RobotPermission
 import com.huahua.robot.entity.LuckyTime
+import com.huahua.robot.utils.*
 import com.huahua.robot.utils.FileUtil.getTempImage
 import com.huahua.robot.utils.FileUtil.url
-import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.MessageUtil.Companion.getImageMessage
-import com.huahua.robot.utils.Permission
 import com.huahua.robot.utils.PermissionUtil.Companion.authorPermission
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToMember
 import com.huahua.robot.utils.PermissionUtil.Companion.botPermission
-import com.huahua.robot.utils.PostType
-import com.huahua.robot.utils.TimeUtil
 import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
@@ -33,6 +30,7 @@ import love.forte.simbot.message.Message
 import love.forte.simbot.message.plus
 import love.forte.simbot.message.toText
 import love.forte.simbot.utils.item.toList
+import java.time.LocalDate
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.minutes
@@ -152,7 +150,16 @@ class GroupListener {
             }
         }
 
-        if ((msg == "抽奖" || "cj" == msg.lowercase() || msg == "奖励我") || num == 2)  // 判断消息内容是否为抽奖
+        val list = ChineseToPinyinUtils.toPinYin(msg, "|")?.split("|")
+        var pinyin = false
+        if (list != null) {
+            if ("cou" in list || "chou" in list) {
+                if ("jiang" in list) {
+                    pinyin = true
+                }
+            }
+        }
+        if ((msg == "抽奖" || "cj" == msg.lowercase() || msg == "奖励我") || num == 2 || pinyin)  // 判断消息内容是否为抽奖
             if (botCompareToAuthor()) {
                 author().mute((lucky.time * lucky.multiple).minutes)    // 禁言指定时间
                 val message: Message =
@@ -490,19 +497,57 @@ class GroupListener {
         }
     }
 
+
     @RobotListen("自助头衔", isBoot = true)
     @Filter("头衔{{title}}", matchType = MatchType.REGEX_MATCHES)
     suspend fun GroupMessageEvent.receiveTitle(@FilterValue("title") title: String) {
         (botPermission() != Permission.OWNER).then { return }
         log.error(title)
-        if (title.encodeToByteArray().size > 18) {
+        if (title.trim().encodeToByteArray().size > 18) {
             send("哎呀，太长啦，怼不进去")
             return
         }
         val event = this as MiraiGroupMessageEvent
         val member = event.originalEvent.group[author().id.number]
-        member!!.specialTitle = title
+        member!!.specialTitle = title.trim()
         reply("头衔「${title}」拿好哦")
+    }
+
+    @RobotListen("随机冒泡", isBoot = true)
+    suspend fun GroupMessageEvent.maopao() {
+        val array: Array<Any> = arrayOf(
+            "对了，今天天好蓝！",
+            "对了，Hello World~",
+            "还有，今天天真蓝!",
+            "哎呀，今天云真白!",
+            "还有，今天蓝真天!",
+            "呐呐，想要一只猫猫呢~",
+            "哎呀，忘吃药了..",
+            "呐呐，(●'◡'●)",
+            "我爱你，而且，(●'◡'●)",
+            "哦~(●'◡'●)",
+            "我爱你，但是，忘吃药了..",
+            "我爱你，但是，想要一只猫猫呢",
+            "我爱你，但是，看到了一只可爱的猫猫呢!",
+            "我爱你，而且，今天白真云!",
+            "我爱你，而且，越来越冷了呢",
+            "呐，喵",
+            "话说..喵",
+            "呐呐，好困...（Zzz",
+            "话说..忘吃药了..",
+        )
+
+        when (Random().nextInt(200)) {
+            99 -> {
+                send(array[Random().nextInt(1, array.size - 1)])
+            }
+        }
+        when (Random().nextInt(210)) {
+            66 -> send("呐呐呐，你知道吗，今天是今年的第${LocalDate.now().dayOfYear}天呢")
+            77 -> send("啊！现在的时间是 ${TimeUtil.getNowTime()}哒~")
+            111 -> send("说起来，现在的时间是 ${TimeUtil.getNowTime()}哒~")
+            188 -> send(messageContent.messages)
+        }
     }
 
 }

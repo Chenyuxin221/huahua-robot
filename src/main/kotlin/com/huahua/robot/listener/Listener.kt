@@ -7,25 +7,24 @@ import com.alibaba.fastjson2.JSONObject
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.*
 import com.huahua.robot.entity.Chat
-import com.huahua.robot.entity.Setu
 import com.huahua.robot.entity.Tuizi
 import com.huahua.robot.utils.FileUtil.getTempImage
 import com.huahua.robot.utils.FileUtil.getTempMusic
-import com.huahua.robot.utils.FileUtil.toFile
 import com.huahua.robot.utils.FileUtil.url
 import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.MessageUtil.Companion.getImageMessage
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
 import com.huahua.robot.utils.UrlUtil
 import com.huahua.robot.utils.getForwardImageMessages
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
 import love.forte.simbot.ID
 import love.forte.simbot.LoggerFactory
-import love.forte.simbot.action.sendIfSupport
 import love.forte.simbot.component.mirai.message.MiraiSendOnlyAudio
 import love.forte.simbot.event.FriendMessageEvent
 import love.forte.simbot.event.GroupMessageEvent
@@ -70,28 +69,37 @@ class Listener {
     suspend fun MessageEvent.setu() {
         val url = "http://localhost:8080/api/photo"
         val imageList = arrayListOf<String>()
-        for (i in 0..9) {
-            imageList.add(HttpUtil.getJsonClassFromUrl(url, Setu::class.java).url)
+        var count = 0
+        while (true) {
+            if (count == 10) {
+                break
+            }
+            val body = JSON.parseObject(HttpUtil.getBody(url))
+            if (body.getIntValue("code") == 200) {
+                val data = JSON.parseObject(body.getString("data"))
+                imageList.add(data.getString("url"))
+                count += 1
+            } else {
+                log.error(body.getString("msg"))
+            }
         }
-        val imgPath = HttpUtil.getJsonClassFromUrl(url, Setu::class.java).url    // 获取图片地址
         val flag: MessageReceipt?
-        if (this is GroupMessageEvent) {  // 判断bot是否有操作权限
+
+        if (this is GroupMessageEvent) { //判断是否为群聊环境
             val message = getForwardImageMessages(imageList, RobotCore.BOTID.tryToLong())
-            flag = sendIfSupport(message!!)
-            botCompareToAuthor().then {
+            flag = send(message!!) // 发送消息并获取标记
+            botCompareToAuthor().then { //判断bot是否有权限
                 author().mute((5).minutes)  // 禁言5分钟
                 messageContent.delete()// 撤回消息
             }
-
-        } else {
-            flag = sendIfSupport(imgPath.toFile().getImageMessage())  // 发送图片并获取标记
-        }
-        bot.launch {    // 启动协程
-            if (flag != null && flag.isSuccess) {   // 判断发送是否成功
-                delay(180000)    // 由于转发消息图片过多，上传较慢，故延迟三分钟
-                flag.delete()  // 通过标记撤回此图片
+            bot.launch {    // 启动协程
+                if (flag != null && flag.isSuccess) {   // 判断发送是否成功
+                    delay(180000)    // 由于转发消息图片过多，上传较慢，故延迟三分钟
+                    flag.delete()  // 通过标记撤回此图片
+                }
             }
         }
+
     }
 
     /**
@@ -304,11 +312,18 @@ class Listener {
     @RobotListen(desc = "结束程序")
     @Filter(".exit", matchType = MatchType.TEXT_CONTAINS)
     suspend fun MessageEvent.exit() {
+        val command = """
+            taskkill /f /im tail.exe
+            taskkill /f /im cmd.exe
+        """.trimIndent()
         when (this) {
             is GroupMessageEvent -> {
                 if (author().id == RobotCore.ADMINISTRATOR.ID) {
                     send("5s后结束程序...")
                     delay(5000)
+                    withContext(Dispatchers.IO) {
+                        Runtime.getRuntime().exec(command)
+                    }
                     exitProcess(0)
                 }
             }
@@ -317,6 +332,9 @@ class Listener {
                 if (friend().id == RobotCore.ADMINISTRATOR.ID) {
                     send("5s后结束程序...")
                     delay(5000)
+                    withContext(Dispatchers.IO) {
+                        Runtime.getRuntime().exec(command)
+                    }
                     exitProcess(0)
                 }
             }
@@ -334,7 +352,7 @@ class Listener {
         msg.isEmpty().then {    // 判断消息内容是否为空
             return  // 跳出方法
         }
-        val url = "http://ruohuan.xiaoapi.cn/API/other/xiaoai.php?msg=$msg" // 获取接口链接
+        val url = "https://xiaobai.klizi.cn/API/other/xiaoai.php?data=&msg=$msg" // 获取接口链接
         val reply = HttpUtil.getJsonClassFromUrl(url, Chat::class.java).text    // 获取回复内容
         when (this) {
             is GroupMessageEvent -> {

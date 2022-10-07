@@ -1,13 +1,13 @@
 package com.huahua.robot.api.controller
 
-import com.google.gson.Gson
 import com.huahua.robot.api.entity.Message
 import com.huahua.robot.api.mapper.MessageMapper
 import com.huahua.robot.api.response.MessageResponse
-import com.huahua.robot.api.response.MsgResponse
+import com.huahua.robot.api.result.Result
+import com.huahua.robot.api.result.ResultCode
+import com.huahua.robot.api.result.ResultStatus
 import love.forte.simbot.LoggerFactory
 import org.springframework.web.bind.annotation.*
-import kotlin.reflect.jvm.jvmName
 
 /**
  * ClassName: MessageController 没啥用了 数据懒得取了
@@ -21,7 +21,7 @@ class MessageController(
     val messageMapper: MessageMapper
 ) {
 
-    private val log = LoggerFactory.getLogger(MessageController::class.jvmName)
+    private val log = LoggerFactory.getLogger(MessageController::class)
 
     /**
      *
@@ -29,11 +29,11 @@ class MessageController(
      * @return String   json格式的字符串
      */
     @PostMapping("/uploadMessage")
-    fun uploadMessage(@RequestBody body: Message): String {
-        val result:Int = messageMapper.insert(body)
-        if (result<1)
-            return Gson().toJson(MsgResponse(404,"哎呀，插入数据失败了"))
-        return Gson().toJson(MsgResponse(200,"插入♂成功"))
+    fun uploadMessage(@RequestBody body: Message): Result<out Message?> {
+        val result: Int = messageMapper.insert(body)
+        if (result < 1)
+            return Result.failure(ResultCode(404, "插入失败，未知错误"))
+        return Result.success(Message(200, "插入♂成功"))
     }
 
     /**
@@ -49,26 +49,21 @@ class MessageController(
         @RequestParam("groupId") groupId: String,
         @RequestParam("userId") userId: String,
         @RequestParam("Time") sendTime: Long,
-    ): MessageResponse {
-        val simbotV2LastMessageTime = 1651939839425L //数据库2.x最后一条聊天记录发送时间
-        val isOldData = simbotV2LastMessageTime >= sendTime
+    ): Result<out Message?> {
         val map: HashMap<String, Any> = hashMapOf()
         map["groupId"] = groupId
         map["sendUserCode"] = userId
         //取到退群前发送的最后一条消息
         val messageList: MutableList<Message?>? = messageMapper.selectByMap(map)
-        val message = if (messageList?.isNotEmpty() == true){
+        val message = if (messageList?.isNotEmpty() == true) {
             messageList.first()
-        }else{
-            return MessageResponse(404,Message(),0)
+        } else {
+            return Result.failure(ResultStatus.DATA_IS_EMPTY)
         }
         if (message!=null){
-            if (isOldData) {
-                return MessageResponse(200,message,2)
-            }
-            return MessageResponse(200,message,3)
+            return Result.success(message)
         }
-        return MessageResponse(404,Message(),0)
+        return Result.failure(ResultStatus.DATA_IS_EMPTY)
     }
 }
 

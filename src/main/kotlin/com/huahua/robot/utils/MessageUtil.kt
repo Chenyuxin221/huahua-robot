@@ -15,19 +15,20 @@ import love.forte.simbot.component.mirai.bot.MiraiBot
 import love.forte.simbot.component.mirai.event.MiraiGroupMessageEvent
 import love.forte.simbot.component.mirai.message.MiraiMusicShare
 import love.forte.simbot.component.mirai.message.asSimbotMessage
-import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.event.MessageEvent
-import love.forte.simbot.message.*
 import love.forte.simbot.message.At
 import love.forte.simbot.message.Image.Key.toImage
 import love.forte.simbot.message.Message
+import love.forte.simbot.message.Messages
+import love.forte.simbot.message.ReceivedMessageContent
 import love.forte.simbot.resources.Resource.Companion.toResource
 import love.forte.simbot.tryToLong
 import net.mamoe.mirai.Mirai
 import net.mamoe.mirai.contact.Contact.Companion.uploadImage
-import net.mamoe.mirai.message.data.*
+import net.mamoe.mirai.message.data.ForwardMessage
 import net.mamoe.mirai.message.data.Image
-import net.mamoe.mirai.message.data.PlainText
+import net.mamoe.mirai.message.data.MusicKind
+import net.mamoe.mirai.message.data.buildForwardMessage
 import java.io.File
 import java.net.URL
 import java.nio.file.Path
@@ -290,6 +291,7 @@ class MessageUtil {
     }
 
 }
+
 /**
  * 图集转发消息
  * @receiver GroupMessageEvent  simbot的群事件监听
@@ -297,17 +299,17 @@ class MessageUtil {
  * @param userId Long   用户Id
  * @return Message.Element<*>? simbot的消息
  */
-suspend fun GroupMessageEvent.getForwardImageMessages(list:ArrayList<String>?,userId:Long): Message.Element<*>? {
+suspend fun MessageEvent.getForwardImageMessages(list: ArrayList<String>?, userId: Long): Message.Element<*>? {
     val log = LoggerFactory.getLogger(MessageUtil::class)
-    if (list.isNullOrEmpty()){
+    if (list.isNullOrEmpty()) {
         log.error("图片列表为空")
         return null
     }
-    val forward:ForwardMessage ?
+    val forward: ForwardMessage?
     val miraiBot = bot as MiraiBot
-        forward = buildForwardMessage((this as MiraiGroupMessageEvent).originalEvent.group){
-            list.forEach{
-                val img = Image(miraiBot.originalBot.asFriend.uploadImage(File(it)).imageId)
+    forward = buildForwardMessage((this as MiraiGroupMessageEvent).originalEvent.group) {
+        list.forEach {
+            val img = Image(miraiBot.originalBot.asFriend.uploadImage(File(it)).imageId)
                 add(RobotCore.BOTID.tryToLong(), Mirai.queryProfile(bot.originalBot,userId).nickname, img)
             }
         }

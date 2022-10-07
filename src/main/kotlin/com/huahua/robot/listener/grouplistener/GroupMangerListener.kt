@@ -1,15 +1,20 @@
 package com.huahua.robot.listener.grouplistener
 
+import com.alibaba.fastjson2.JSON
 import com.huahua.robot.core.annotation.RobotListen
+import com.huahua.robot.core.common.RobotCore
 import com.huahua.robot.core.common.send
 import com.huahua.robot.core.common.then
 import com.huahua.robot.core.enums.RobotPermission
+import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.Permission
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToMember
 import com.huahua.robot.utils.PermissionUtil.Companion.botPermission
 import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
+import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
+import love.forte.simbot.ID
 import love.forte.simbot.component.mirai.MiraiMember
 import love.forte.simbot.component.mirai.event.MiraiGroupMessageEvent
 import love.forte.simbot.event.GroupMessageEvent
@@ -186,8 +191,79 @@ class GroupMangerListener {
                 val member = event.originalEvent.group[it.target.tryToLong()]!!
                 val title = messageContent.plainText.split("给头衔")[1].trim()
                 member.specialTitle = title
-                send(At(author().id) + " 成功给予用户[${group().member((it as At).target)!!.nickOrUsername}]头衔：${title}".toText())
+                send(At(author().id) + " 成功给予用户[${group().member(it.target)!!.nickOrUsername}]头衔：${title}".toText())
 
             }
         }
+
+    @RobotListen("增删机器人管理权限", isBoot = true)
+    @Filter("{{value}}权限", matchType = MatchType.REGEX_MATCHES)
+    suspend fun GroupMessageEvent.serSuperManager(@FilterValue("value") value: String) {
+        if (author().id != RobotCore.ADMINISTRATOR.ID) {
+            reply(" 操作失败，你的权限不足")
+            return
+        }
+        messageContent.messages.forEach {
+            if (it is At) {
+                val url = "http://127.0.0.1:8080/manager/${
+                    when (value) {
+                        "给", "设置", "添加", "增加" -> "add"
+                        "取消", "删除", "移除" -> "delete"
+                        else -> return
+                    }
+                }?groupId=${group().id}&userId=${it.target}"
+                val body = JSON.parseObject(HttpUtil.getBody(url))
+                when (body.getIntValue("code")) {
+                    200 -> {
+                        reply("操作成功")
+                    }
+
+                    else -> {
+                        reply("操作失败：${body.getString("msg")}")
+                    }
+                }
+            }
+        }
+    }
+
+    @RobotListen("增删管理", isBoot = true, permissionsRequiredByTheRobot = RobotPermission.OWNER)
+    @Filter("{{value}}管理", matchType = MatchType.REGEX_MATCHES)
+    suspend fun GroupMessageEvent.setManager(@FilterValue("value") value: String) {
+        messageContent.messages.forEach {
+            if (it is At) {
+                val url = "http://127.0.0.1:8080/manager/query?groupId=${group().id}&userId=${author().id}"
+                val body = JSON.parseObject(HttpUtil.getBody(url))
+                val permission = when (body.getIntValue("code")) {
+                    200 -> true
+                    else -> false
+                }
+
+                if (!permission || author().id != RobotCore.ADMINISTRATOR.ID) {
+                    reply(" 权限设置失败，你的权限不足")
+                    return
+                }
+                val event = this as MiraiGroupMessageEvent
+                val member = event.originalEvent.group[it.target.tryToLong()]!!
+                when (value.trim()) {
+                    "给", "设置", "添加", "增加" -> {
+                        if (group().member(it.target)!!.isAdmin()) {
+                            send("用户[${it.target}]已经是管理员了")
+                            return@forEach
+                        }
+                        member.modifyAdmin(true)
+                        send(At(author().id) + " 成功给予用户[${group().member(it.target)!!.nickOrUsername}]管理员权限".toText())
+                    }
+
+                    "取消", "删除", "移除" -> {
+                        if (!group().member(it.target)!!.isAdmin()) {
+                            send("用户[${it.target}]没有管理员权限")
+                            return@forEach
+                        }
+                        member.modifyAdmin(false)
+                        send(At(author().id) + " 成功${value.trim()}用户[${group().member(it.target)!!.nickOrUsername}]管理员权限".toText())
+                    }
+                }
+            }
+        }
+    }
 }

@@ -22,6 +22,11 @@ object TimeUtil {
         return sdf.format(date)
     }
 
+    fun getNowTime(): String {
+        val date = Date(System.currentTimeMillis())
+        return SimpleDateFormat("HH:mm:ss").format(date)
+    }
+
     fun millisecondFormat(ms: Long): String {
         val ss = 1000
         val mi = ss * 60

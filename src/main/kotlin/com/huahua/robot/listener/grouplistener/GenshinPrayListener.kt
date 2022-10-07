@@ -176,4 +176,5 @@ class GenshinPrayListener {
         return data.toJSONString()
     }
 
+
 }

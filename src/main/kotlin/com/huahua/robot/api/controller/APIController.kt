@@ -1,10 +1,10 @@
 package com.huahua.robot.api.controller
 
 
-import com.google.gson.Gson
+import com.huahua.robot.api.entity.Photo
 import com.huahua.robot.api.mapper.PhotoMapper
-import com.huahua.robot.api.response.ImgResponse
-import com.huahua.robot.api.response.MsgResponse
+import com.huahua.robot.api.result.Result
+import com.huahua.robot.api.result.ResultStatus
 import love.forte.simbot.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -26,15 +26,14 @@ class APIController(
     private val log = LoggerFactory.getLogger(APIController::class.jvmName)
 
     @GetMapping("/photo")
-    fun portrait(): String {
+    fun portrait(): Result<out Photo?> {
         val count = photoMapper.selectCount(null)
         if (count < 1) {
-            return Gson().toJson(MsgResponse(404,"哎呀，啥都没有"))
+            return Result.failure(ResultStatus.DATA_IS_EMPTY)
         }
         val url = photoMapper.selectById(Random().nextInt(count.toInt()))?.url
-        val result = Gson().toJson(ImgResponse(200,url))
-        log.info(result)
-        return result
+            ?: return Result.failure(ResultStatus.DATA_IS_EMPTY)
+        return Result.success(Photo(url = url))
     }
 
 }
