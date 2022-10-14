@@ -442,7 +442,7 @@ class Listener {
         }
     }
 
-    @RobotListen(isBoot = true, desc = "冒泡")
+//    @RobotListen(isBoot = true, desc = "冒泡")
     suspend fun MessageEvent.aNaoDai() {
         val n = Random().nextInt(100)
         val url = "https://xiaobapi.top/api/xb/api/and.php"

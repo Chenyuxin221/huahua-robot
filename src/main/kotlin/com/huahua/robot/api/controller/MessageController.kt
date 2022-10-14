@@ -29,11 +29,11 @@ class MessageController(
      * @return String   json格式的字符串
      */
     @PostMapping("/uploadMessage")
-    fun uploadMessage(@RequestBody body: Message): Result<out Message?> {
+    fun uploadMessage(@RequestBody body: Message): Result<out ResultCode?> {
         val result: Int = messageMapper.insert(body)
         if (result < 1)
             return Result.failure(ResultCode(404, "插入失败，未知错误"))
-        return Result.success(Message(200, "插入♂成功"))
+        return Result.success(ResultCode(200, "插入♂成功"))
     }
 
     /**

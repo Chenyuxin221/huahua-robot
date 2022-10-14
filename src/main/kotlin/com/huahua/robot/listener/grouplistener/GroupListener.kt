@@ -542,10 +542,11 @@ class GroupListener {
                 send(array[Random().nextInt(1, array.size - 1)])
             }
         }
+        val time = TimeUtil.getNowTime()
         when (Random().nextInt(210)) {
-            66 -> send("呐呐呐，你知道吗，今天是今年的第${LocalDate.now().dayOfYear}天呢")
-            77 -> send("啊！现在的时间是 ${TimeUtil.getNowTime()}哒~")
-            111 -> send("说起来，现在的时间是 ${TimeUtil.getNowTime()}哒~")
+            66 -> send(String.format("呐呐呐，你知道吗，今天是今年的第%s天呢", LocalDate.now().dayOfYear))
+            77 -> send(String.format("啊！现在的时间是%s哒~", time))
+            111 -> send(String.format("说起来，现在的时间是%s哒~", time))
             188 -> send(messageContent.messages)
         }
     }
