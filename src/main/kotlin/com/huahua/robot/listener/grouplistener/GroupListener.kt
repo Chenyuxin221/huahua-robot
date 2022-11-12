@@ -1,11 +1,9 @@
 package com.huahua.robot.listener.grouplistener
 
 import com.alibaba.fastjson2.JSON
+import com.alibaba.fastjson2.JSONException
 import com.huahua.robot.core.annotation.RobotListen
-import com.huahua.robot.core.common.RobotCore
-import com.huahua.robot.core.common.isNull
-import com.huahua.robot.core.common.send
-import com.huahua.robot.core.common.then
+import com.huahua.robot.core.common.*
 import com.huahua.robot.core.enums.RobotPermission
 import com.huahua.robot.entity.LuckyTime
 import com.huahua.robot.utils.*
@@ -30,6 +28,8 @@ import love.forte.simbot.message.Message
 import love.forte.simbot.message.plus
 import love.forte.simbot.message.toText
 import love.forte.simbot.utils.item.toList
+import org.apache.http.conn.HttpHostConnectException
+import java.io.File
 import java.time.LocalDate
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -95,7 +95,8 @@ class GroupListener {
         val url =
             """((http|ftp|https)://)(([a-zA-Z0-9._-]+\.[a-zA-Z]{2,6})|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,4})*(/[a-zA-Z0-9&%_./-~-]*)?""".toRegex()
                 .find(input = msg)?.value
-        if (url != null) {
+        if (url != null) return
+        if (msg.contains(",")) {
             return
         }
         if (msg.contains("连抽")) {
@@ -549,6 +550,206 @@ class GroupListener {
             111 -> send(String.format("说起来，现在的时间是%s哒~", time))
             188 -> send(messageContent.messages)
         }
+    }
+
+    var count = -1
+    var dic = ""
+
+    @RobotListen(desc = "AI绘图", isBoot = true)
+    @Filter("/drawing {{tags}}", matchType = MatchType.REGEX_MATCHES)
+    suspend fun GroupMessageEvent.drawing(@FilterValue("tags") tags: String) {
+        val api = "http://127.0.0.1:8080/AIBlackList"
+        if (dic.isNotEmpty() && count > 100) {
+            val d = File(dic)
+            if (d.isDirectory) {
+                d.listFiles()!!.forEach {
+                    if (it.isFile) {
+                        it.delete()
+                    }
+                }
+            }
+        }
+        when (tags) {
+            "-help" -> {
+                send("权重修饰符：()")
+                return
+            }
+
+            "-ban showall" -> {
+                val body = HttpUtil.getBody("${api}/queryAll")
+                val result = JSON.parseObject(body).getJSONArray("data").joinToString(",")
+                reply(result)
+                return
+            }
+        }
+        val tgs = tags.lowercase().split(",")
+        val t1 = tags.lowercase().split("，")
+        val tagList = mutableListOf<String>()
+        if (tgs.isNotEmpty() || t1.isNotEmpty()) {
+            tgs.forEach {
+                val text: String = if (it.contains("(") && it.contains(")")) {
+                    it.substring(it.lastIndexOf("(") + 1, it.indexOf(")"))
+                } else if (it.contains("(")) {
+                    it.substring(it.lastIndexOf("(") + 1)
+                } else if (it.contains(")")) {
+                    it.substring(0, it.indexOf(")"))
+                } else {
+                    it
+                }
+                tagList.add(text.lowercase())
+            }
+            if (t1.size > 1) {
+                t1.forEach {
+                    val text = if (it.contains("(") && it.contains(")")) {
+                        it.substring(it.lastIndexOf("(") + 1, it.indexOf(")"))
+                    } else if (it.contains("(")) {
+                        it.substring(it.lastIndexOf("(") + 1)
+                    } else if (it.contains(")")) {
+                        it.substring(0, it.indexOf(")"))
+                    } else {
+                        it
+                    }
+                    tagList.add(text.lowercase())
+                }
+            }
+        }
+
+        if (tagList.isNotEmpty()) {
+            tagList.forEach {
+                if (it in RobotCore.AiBLACKLIST) {
+                    send("检索到敏感词汇【${it}】,拒绝执行")
+                    return
+                }
+            }
+        }
+        if (author().id == RobotCore.ADMINISTRATOR.ID) {
+            val pattern = """^[A-Za-z0-9, ]+$"""
+            when (tags) {
+
+                "-ban add" -> {
+                    val text = sendAndWait("请输入", 30, TimeUnit.SECONDS, Regex(pattern))?.plainText
+                    text?.also {
+                        Regex(pattern).find(text)?.groups?.get(0)?.value?.lowercase()?.let {
+                            val list = it.split(",")
+                            val failureList = mutableListOf<Map<String, String>>()
+                            for (i in list.indices) {
+                                val js =
+                                    JSON.parseObject(HttpUtil.getBody("${api}/insert?value=${list[i].lowercase()}"))
+                                if (js.getIntValue("code") != 200) {
+                                    failureList.add(mapOf(Pair(list[i], js.getString("msg"))))
+                                    continue
+                                }
+
+                            }
+                            val msg =
+                                "已完成操作\n总数：${list.size}\n成功：${list.size - failureList.size}\n失败：${failureList.size}\n失败详情：${
+                                    failureList.fold("") { acc, map -> acc + map.keys + "," }
+                                }\n${failureList.fold("") { acc, map -> acc + map.keys + "：" + map.values + "\n" }}"
+                            send(msg)
+                            refreshAiBlackList().not().then {
+                                send("黑名单刷新失败！")
+                            }
+                        }
+                    }
+                    return
+                }
+
+                "-ban delete", "-ban remove" -> {
+                    val text = sendAndWait("请输入", 30, TimeUnit.SECONDS, Regex(pattern))?.plainText
+                    text?.also {
+                        Regex(pattern).find(text)?.groups?.get(0)?.value?.lowercase()?.let {
+                            val list = it.split(",")
+                            for (i in list.indices) {
+                                val js = JSON.parseObject(HttpUtil.getBody("${api}/delete?value=${list[i]}"))
+                                if (js.getIntValue("code") != 200) {
+                                    send("【${list[i]}】删除失败：${js.getString("msg")}")
+                                    break
+                                }
+                            }
+                            refreshAiBlackList().not().then {
+                                send("黑名单刷新失败！")
+                            }
+                        }
+                    }
+                    return
+                }
+
+                "-ban update" -> {
+                    val text = sendAndWait("请输入", 30, TimeUnit.SECONDS, Regex(pattern))?.plainText
+                    text?.also {
+                        Regex(pattern).find(text)?.groups?.get(0)?.value?.lowercase()?.let {
+                            val list = it.split(",")
+
+                            if (list.size != 2) {
+                                send("格式错误！！\n正确格式：修改前,修改后\n使用半角符号")
+                                return
+                            }
+                            val js =
+                                JSON.parseObject(HttpUtil.getBody("${api}/update?value=${list[0]}&newValue=${list[1]}"))
+                            if (js.getIntValue("code") != 200) {
+                                send("修改失败：${js.getString("msg")}")
+                            }
+                            reply("修改成功")
+                            refreshAiBlackList().not().then {
+                                send("黑名单刷新失败！")
+                            }
+                        }
+                    }
+                    return
+                }
+            }
+        }
+
+        val aiApi = "http://127.0.0.1:7860/api/huahua"
+        val body = HttpUtil.post {
+            url = aiApi
+            json =
+                "{\"fn_index\":101,\"data\":[\"masterpiece,best quality,official art,extremely detailed CG unity 8k wallpaper,${tags} \",\"lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, bad feet\",\"None\",\"None\",20,\"Euler a\",true,false,1,1,7,-1,-1,0,0,0,false,512,512,true,0.7,0,0,\"None\",0.9,5,\"0.0001\",false,\"None\",\"\",0.1,false,false,false,false,\"\",\"Seed\",\"\",\"Nothing\",\"\",true,false,false,null]}"
+        }.response
+        try {
+            logger { body }
+            val data = JSON.parseObject(body).getString("data")
+            val imgPath = JSON.parseObject(data.substring(2, data.indexOf("]"))).getString("name")
+            val file = File(imgPath)
+            dic = file.parent
+            count = File(dic).listFiles()!!.size
+            if (!file.isFile) {
+                send("文件创建失败了..，请重新尝试获取")
+                return
+            }
+            reply(file.getImageMessage())
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            send("请求失败，api崩溃了")
+        } catch (e: HttpHostConnectException) {
+            send("请求失败，api未开启")
+        } catch (e: StringIndexOutOfBoundsException) {
+            send("请求失败，索引超界")
+            send(e.printStackTrace())
+        } catch (e: Exception) {
+            send("未知错误：${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+    /**
+     * 刷新本地黑名单
+     */
+    private fun refreshAiBlackList(): Boolean {
+        val url = "http://127.0.0.1:8080/AIBlackList/queryAll"
+        val json = JSON.parseObject(HttpUtil.get(url).response)
+        if (json.getIntValue("code") != 200) {
+            logger { "黑名单刷新失败" }
+            return false
+        }
+
+        val list = json.getJSONArray("data").toMutableList()
+        val result = mutableListOf<String>()
+        list.forEach {
+            result.add(it.toString())
+        }
+        RobotCore.AiBLACKLIST = result
+        return true
     }
 
 }

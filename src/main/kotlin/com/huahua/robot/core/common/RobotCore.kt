@@ -81,6 +81,8 @@ class RobotCore (
          */
         var ADMINISTRATOR: String = Account.admin
 
+        var AiBLACKLIST = mutableListOf<String>()
+
         /**
          * 主机器人Id
          */

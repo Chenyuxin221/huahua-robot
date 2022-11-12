@@ -1,6 +1,7 @@
 package com.huahua.robot.core.common
 
 import com.huahua.robot.api.entity.Photo
+import com.huahua.robot.api.mapper.NovelAiBlacklistMapper
 import com.huahua.robot.api.mapper.PhotoMapper
 import com.huahua.robot.utils.LoadLocalImg
 import love.forte.simbot.LoggerFactory
@@ -15,8 +16,9 @@ import kotlin.reflect.jvm.jvmName
  * @date 2022-05-13 20:19
  */
 @Configuration
-class CmdRunner (
-    var mapper:PhotoMapper
+class CmdRunner(
+    var mapper: PhotoMapper,
+    var aiBlacklistMapper: NovelAiBlacklistMapper,
 ) : CommandLineRunner {
 
     val log = LoggerFactory.getLogger(CmdRunner::class.jvmName)
@@ -32,9 +34,23 @@ class CmdRunner (
      */
     fun initGlobalVariable() {
         RobotCore.PhotoList = loadImage()
+        loadAiBlackList()
     }
 
-    fun loadImage(): ArrayList<String> {
+    private fun loadAiBlackList() {
+        val list = aiBlacklistMapper.selectList(null)
+        list.isNotEmpty().then {
+            list.forEach {
+                RobotCore.AiBLACKLIST.add(it.value)
+            }
+        }
+        logger {
+            "当前违禁词数量：${RobotCore.AiBLACKLIST.size}"
+            "违禁词列表：${RobotCore.AiBLACKLIST.joinToString(",")}"
+        }
+    }
+
+    private fun loadImage(): ArrayList<String> {
         val localImgList: ArrayList<String> = LoadLocalImg().loadLocalImage()
         var imgDBCount = mapper.selectCount(null)
 
