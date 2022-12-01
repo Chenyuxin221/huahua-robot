@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--suppress VulnerableLibrariesLocal -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.6.7</version>
+        <version>2.7.5</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.huahua</groupId>
@@ -15,9 +16,9 @@
     <description>kt-huahua-robot</description>
     <properties>
         <java.version>17</java.version>
-        <kotlin.version>1.6.21</kotlin.version>
-        <simboot.version>3.0.0-beta-RC.1</simboot.version>
-        <mirai.version>3.0.0.0-beta-M2-SNAPSHOT</mirai.version>
+        <kotlin.version>1.7.21</kotlin.version>
+        <simboot.version>3.0.0-M2</simboot.version>
+        <mirai.version>3.0.0.0-beta.3</mirai.version>
     </properties>
 
     <repositories>
@@ -63,6 +64,12 @@
             <groupId>com.belerweb</groupId>
             <artifactId>pinyin4j</artifactId>
             <version>2.5.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.10.0</version>
         </dependency>
 
 
@@ -198,6 +205,25 @@
                 </dependencies>
             </plugin>
         </plugins>
+<!--        <resources>-->
+<!--            <resource>-->
+<!--                <directory>src/main/kotlin</directory>-->
+<!--                <includes>-->
+<!--                    <include>**/*.xml</include>-->
+<!--                </includes>-->
+<!--            </resource>-->
+<!--            <resource>-->
+<!--                <directory>src/main/resources</directory>-->
+<!--                <includes>-->
+<!--                    <include>**/*.*</include>-->
+<!--                </includes>-->
+<!--                <excludes>-->
+<!--                    <exclude>**/*.sql</exclude>-->
+<!--                    <exclude>**/*.xml</exclude>-->
+<!--                    <exclude>**/*.bot</exclude>-->
+<!--                </excludes>-->
+<!--            </resource>-->
+<!--        </resources>-->
     </build>
 
 </project>

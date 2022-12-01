@@ -3,6 +3,7 @@
 package com.huahua.robot.music
 
 import com.alibaba.fastjson2.JSON
+import com.alibaba.fastjson2.JSONException
 import com.alibaba.fastjson2.JSONObject
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.*
@@ -25,7 +26,7 @@ import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
-import love.forte.simbot.LoggerFactory
+import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.component.mirai.message.MiraiSendOnlyAudio
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.event.MessageEvent
@@ -197,7 +198,7 @@ class MusicListener {
         params["mode"] = "QR"
         params["type"] = "json"
         val list = getQQMusicList(url, params)
-        if (list.contains("搜素失败")) {
+        if (list.contains("失败")) {
             return false
         }
         val musicList = list + listTip
@@ -256,16 +257,25 @@ class MusicListener {
 
     private fun getQQMusicList(url: String, params: HashMap<String, Any>): String {
         val listResult = HttpUtil.post(url, params, PostType.DATA)
-        val jb = JSON.parseObject(listResult)
+        var jb: JSONObject? = null
+        try{
+            jb = JSON.parseObject(listResult)
+            jb.isNull {
+                log.error(jb.toJSONString())
+                return "搜索失败,请稍后重试"
+            }
+            (jb.getIntValue("code") == -201).then {
+                log.error(jb.toJSONString())
+                return "搜索失败,无搜索结果"
+            }
+        }catch (e:JSONException){
+            Sender.sendAdminMsg(e.printStackTrace())
+            e.printStackTrace()
+        }
         jb.isNull {
-            log.error(jb.toJSONString())
-            return "搜索失败,请稍后重试"
+            return "搜索失败，或许接口已失效"
         }
-        (jb.getIntValue("code") == -201).then {
-            log.error(jb.toJSONString())
-            return "搜索失败,无搜索结果"
-        }
-        val list = jb.get("data") as List<*>
+        val list = jb!!.get("data") as List<*>
         val sb = StringBuilder()
         var num = 1
         list.forEach {

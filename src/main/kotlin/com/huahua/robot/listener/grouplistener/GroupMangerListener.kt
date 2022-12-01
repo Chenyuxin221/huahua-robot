@@ -8,6 +8,7 @@ import com.huahua.robot.core.common.then
 import com.huahua.robot.core.enums.RobotPermission
 import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.Permission
+import com.huahua.robot.utils.PermissionUtil.Companion.authorPermission
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToMember
 import com.huahua.robot.utils.PermissionUtil.Companion.botPermission
 import love.forte.di.annotation.Beans
@@ -17,6 +18,8 @@ import love.forte.simboot.filter.MatchType
 import love.forte.simbot.ID
 import love.forte.simbot.component.mirai.MiraiMember
 import love.forte.simbot.component.mirai.event.MiraiGroupMessageEvent
+import love.forte.simbot.definition.Group
+import love.forte.simbot.definition.Member
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.message.At
 import love.forte.simbot.message.buildMessages
@@ -46,7 +49,6 @@ class GroupMangerListener {
     @RobotListen(
         isBoot = true,
         desc = "禁言服务",
-        permission = RobotPermission.ADMINISTRATOR,
         permissionsRequiredByTheRobot = RobotPermission.ADMINISTRATOR
     )
     @Filter(value = "禁", matchType = MatchType.TEXT_STARTS_WITH)
@@ -60,6 +62,12 @@ class GroupMangerListener {
             val list: ArrayList<At> = arrayListOf()
             messageContent.messages.forEach {
                 if (it is At) {
+                    if (!getBotManagerPermission(group(), author()) &&  //成员没有机器人管理权限
+                        authorPermission() < Permission.ADMINISTRATORS  //成员群权限小于管理员
+                    ) {
+                        send("你的权限不足，无法进行此操作")
+                        return
+                    }
                     if (!botCompareToMember(group().member(it.target)!!)) {
                         send("权限不足，无法对此用户[${it.target}]进行操作")
                         return
@@ -91,13 +99,19 @@ class GroupMangerListener {
     @RobotListen(
         isBoot = true,
         desc = "解除禁言",
-        permission = RobotPermission.ADMINISTRATOR,
         permissionsRequiredByTheRobot = RobotPermission.ADMINISTRATOR
     )
     @Filter("解", matchType = MatchType.TEXT_STARTS_WITH)
     suspend fun GroupMessageEvent.unBan() {
+
         messageContent.messages.forEach {
             if (it is At) {
+                if (!getBotManagerPermission(group(), author()) &&  //成员没有机器人管理权限
+                    authorPermission() < Permission.ADMINISTRATORS  //成员群权限小于管理员
+                ) {
+                    send("你的权限不足，无法进行此操作")
+                    return
+                }
                 if (!botCompareToMember(group().member(it.target)!!)) {
                     send("权限不足，无法对此用户[${it.target}]进行操作")
                     return
@@ -117,11 +131,17 @@ class GroupMangerListener {
     @RobotListen(
         isBoot = true,
         desc = "群禁言",
-        permission = RobotPermission.ADMINISTRATOR,
         permissionsRequiredByTheRobot = RobotPermission.ADMINISTRATOR
     )
     @Filter("开全体禁言")
     suspend fun GroupMessageEvent.groupBan() {
+        if (!getBotManagerPermission(group(), author()) &&  //成员没有机器人管理权限
+            authorPermission() < Permission.ADMINISTRATORS  //成员群权限小于管理员
+        ) {
+            send("你的权限不足，无法进行此操作")
+            return
+        }
+
         val result = group().mute()
         result.then {
             send("已开启群禁言")
@@ -135,11 +155,16 @@ class GroupMangerListener {
     @RobotListen(
         isBoot = true,
         desc = "群解禁",
-        permission = RobotPermission.ADMINISTRATOR,
         permissionsRequiredByTheRobot = RobotPermission.ADMINISTRATOR
     )
     @Filter("关全体禁言")
     suspend fun GroupMessageEvent.groupUnBan() {
+        if (!getBotManagerPermission(group(), author()) &&  //成员没有机器人管理权限
+            authorPermission() < Permission.ADMINISTRATORS  //成员群权限小于管理员
+        ) {
+            send("你的权限不足，无法进行此操作")
+            return
+        }
         val result = group().unmute()
         result.then {
             send("已取消群禁言")
@@ -154,13 +179,19 @@ class GroupMangerListener {
     @RobotListen(
         isBoot = true,
         desc = "踢人操作",
-        permission = RobotPermission.ADMINISTRATOR,
         permissionsRequiredByTheRobot = RobotPermission.ADMINISTRATOR
     )
     @Filter("踢", matchType = MatchType.TEXT_STARTS_WITH)
-    suspend fun GroupMessageEvent.kickPerson() =
+    suspend fun GroupMessageEvent.kickPerson() {
+
         messageContent.messages.forEach {
             (it is At).then {
+                if (!getBotManagerPermission(group(), author()) &&  //成员没有机器人管理权限
+                    authorPermission() < Permission.ADMINISTRATORS  //成员群权限小于管理员
+                ) {
+                    send("你的权限不足，无法进行此操作")
+                    return
+                }
                 if (!botCompareToMember(group().member((it as At).target)!!)) {
                     send("权限不足，无法对此用户[${it.target}]进行操作")
                     return
@@ -168,6 +199,7 @@ class GroupMangerListener {
                 (group().member(it.target) as MiraiMember).kick("芜湖，起飞")
             }
         }
+    }
 
     /**
      * 给予成员群头衔 bot必须为群主
@@ -231,14 +263,8 @@ class GroupMangerListener {
     suspend fun GroupMessageEvent.setManager(@FilterValue("value") value: String) {
         messageContent.messages.forEach {
             if (it is At) {
-                val url = "http://127.0.0.1:8080/manager/query?groupId=${group().id}&userId=${author().id}"
-                val body = JSON.parseObject(HttpUtil.getBody(url))
-                val permission = when (body.getIntValue("code")) {
-                    200 -> true
-                    else -> false
-                }
-
-                if (!permission || author().id != RobotCore.ADMINISTRATOR.ID) {
+                val permission = getBotManagerPermission(group(), author())
+                if (author().id != RobotCore.ADMINISTRATOR.ID) {
                     reply(" 权限设置失败，你的权限不足")
                     return
                 }
@@ -266,4 +292,45 @@ class GroupMangerListener {
             }
         }
     }
+
+    @RobotListen(desc = "权限测试", isBoot = true)
+    @Filter("我的权限")
+    suspend fun GroupMessageEvent.doIHavePermission() {
+        if (author().id == RobotCore.ADMINISTRATOR.ID) {
+            reply("你拥有机器人的最高权限")
+            return
+        }
+        if (getBotManagerPermission(group(), author())) {
+            reply("你拥有机器人的部分操作权限")
+            return
+        }
+        if (authorPermission() == Permission.ADMINISTRATORS) {
+            reply("你拥有基于管理员的部分权限")
+            return
+        } else if (authorPermission() == Permission.OWNER) {
+            reply("这个群你说了算")
+            return
+        }
+        send("你没有操作权限")
+    }
+
+    fun getBotManagerPermission(group: Group, user: Member): Boolean = getBotManagerPermission(group.id, user.id)
+    fun getBotManagerPermission(group: ID, user: ID): Boolean =
+        getBotManagerPermission(group.toString(), user.toString())
+
+    fun getBotManagerPermission(group: String, user: String): Boolean {
+        val url = "http://127.0.0.1:8080/manager/query?groupId=${group}&userId=$user"
+        val body = HttpUtil.get(url).response
+        try {
+            if (JSON.parseObject(body).getIntValue("code") == 200) {
+                return true
+            }
+            return false
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+
+    }
+
 }

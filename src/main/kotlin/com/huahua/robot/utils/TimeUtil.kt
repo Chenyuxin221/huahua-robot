@@ -1,7 +1,12 @@
 package com.huahua.robot.utils
 
+import com.huahua.robot.core.common.isNull
+import com.huahua.robot.core.common.logger
+import org.springframework.boot.logging.LogLevel
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.*
 
 /**
  * ClassName: TimeUtil
@@ -12,12 +17,24 @@ import java.util.*
 object TimeUtil {
 
     /**
-     * @description 时间戳格式化
-     * @receiver Long   时间戳
-     * @return String   格式化时间
+     * 格式化时间戳
+     * @param timeStamp Long 时间戳
+     * @param timeUnit TimeUnit 时间戳单位
+     * @return String   结果
+     * 目前支持的时间戳单位：MILLISECONDS，SECONDS
      */
-    fun getStringTime(timeStamp: Long): String {
-        val date = Date(timeStamp)
+    fun getStringTime(timeStamp: Long,timeUnit: TimeUnit = MILLISECONDS): String {
+        val date = when(timeUnit){
+            MILLISECONDS -> Date(timeStamp)
+            SECONDS -> Date(timeStamp*1000)
+            else -> null
+        }
+        date.isNull {
+            logger(LogLevel.ERROR) {
+                "不支持的时间格式，仅支持MILLISECONDS和SECONDS"
+            }
+            return ""
+        }
         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
         return sdf.format(date)
     }

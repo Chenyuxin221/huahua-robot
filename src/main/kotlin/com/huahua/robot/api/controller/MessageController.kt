@@ -6,7 +6,7 @@ import com.huahua.robot.api.response.MessageResponse
 import com.huahua.robot.api.result.Result
 import com.huahua.robot.api.result.ResultCode
 import com.huahua.robot.api.result.ResultStatus
-import love.forte.simbot.LoggerFactory
+import love.forte.simbot.logger.LoggerFactory
 import org.springframework.web.bind.annotation.*
 
 /**

@@ -11,7 +11,7 @@ import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.filter.MatchType
 import love.forte.simbot.ID
-import love.forte.simbot.LoggerFactory
+import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.event.FriendMessageEvent
 import love.forte.simbot.message.Image
 import java.io.File

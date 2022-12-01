@@ -14,6 +14,7 @@ import com.huahua.robot.utils.FileUtil.url
 import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.MessageUtil.Companion.getImageMessage
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
+import com.huahua.robot.utils.TimeUtil
 import com.huahua.robot.utils.UrlUtil
 import com.huahua.robot.utils.getForwardImageMessages
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +25,7 @@ import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
 import love.forte.simbot.ID
-import love.forte.simbot.LoggerFactory
+import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.component.mirai.message.MiraiSendOnlyAudio
 import love.forte.simbot.event.FriendMessageEvent
 import love.forte.simbot.event.GroupMessageEvent
@@ -540,22 +541,21 @@ class Listener {
             send("未匹配到链接")
             return
         }
-        val api1 = "https://api.caonm.net/api/dsp/api.php?url=$reg" //解析接口
+        val api1 = "https://api.xcboke.cn/api/juhe?url=$reg" //解析接口
         val body = HttpUtil.getBody(api1)
         val result: JSONObject
         try {
             result = JSON.parseObject(body)
         } catch (e: Exception) {
-            send("解析失败")
+            send("解析失败，api已失效")
             return
         }
         when (result.getIntValue("code")) {   //状态码判断
             200 -> log.info("解析成功")
             201 -> {
-                send("不支持解析该链接")
+                send("解析失败")
                 return
             }
-
             else -> {
                 send(result.toJSONString())
                 return
@@ -563,18 +563,23 @@ class Listener {
         }
         val data = JSON.parseObject(result.getString("data"))
         var str = ""
-        val url = if (RobotCore.ShortLinkState) getShortLinkUrl(data.getString("url"), 2, "?")
-            ?: data.getString("url") else data.getString("url")
+        val url = data.getString("url")
         when {
             reg!!.contains("douyin") -> {       //抖音解析
                 val music = JSON.parseObject(data.getString("music"))
-                val bgmUrl = if (RobotCore.ShortLinkState) getShortLinkUrl(music.getString("url"), 2)
-                    ?: music.getString("url") else music.getString("url")
+                val title = if(data.getString("title").contains("@{0}")){
+                    "没有标题"
+                }else{
+                    data.getString("title")
+                }
+                val bgmUrl = music.getString("url")
                 str = """
-                    Title: ${data.getString("title")},
+                    Time: ${TimeUtil.getStringTime(data.getLong("time"),TimeUnit.SECONDS)}
+                    Title: ${title},
                     Author: ${data.getString("author")},
                     Uid: ${data.getString("uid")},
                     Video_Url: ${url},
+                    like: ${data.getIntValue("like")},
                     Bgm_Author: ${music.getString("author")},
                     Bgm_Url: ${bgmUrl}
                 """.trimIndent()

@@ -4,7 +4,7 @@ import com.huahua.robot.api.entity.Photo
 import com.huahua.robot.api.mapper.NovelAiBlacklistMapper
 import com.huahua.robot.api.mapper.PhotoMapper
 import com.huahua.robot.utils.LoadLocalImg
-import love.forte.simbot.LoggerFactory
+import love.forte.simbot.logger.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Configuration
 import kotlin.reflect.jvm.jvmName
@@ -26,7 +26,7 @@ class CmdRunner(
     @Suppress("OPT_IN_USAGE")
     override fun run(vararg args: String?) {
         initGlobalVariable()
-        Sender.sendAdminMsg("我好了")
+//        Sender.sendAdminMsg("我好了")
     }
 
     /**

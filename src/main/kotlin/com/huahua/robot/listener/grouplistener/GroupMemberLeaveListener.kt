@@ -26,7 +26,9 @@ class GroupMemberLeaveListener {
         if (operator===user){
             group().send("啊这...他是自己退群的啊，那没事了")
         }else{
-            group().send("嗯？他是触犯天条被${operator.nickOrUsername}移出去的")
+            if (operator != null) {
+                group().send("嗯？他是触犯天条被${operator.nickOrUsername}移出去的")
+            }
         }
     }
 }

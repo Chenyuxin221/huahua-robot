@@ -1,7 +1,7 @@
 package com.huahua.robot.utils
 
 import com.huahua.robot.core.common.isNull
-import love.forte.simbot.LoggerFactory
+import love.forte.simbot.logger.LoggerFactory
 import java.io.File
 import java.net.URL
 
@@ -59,7 +59,7 @@ object FileUtil {
 
     private fun String.getTempFile(url: URL, type: FileType): File? {
         val file = getTempEmptyFile(this, type)
-        val byteArray = HttpUtil.getResponse(url.toString()).body()?.bytes()
+        val byteArray = HttpUtil.getResponse(url.toString()).body?.bytes()
         byteArray?.let {
             file.writeBytes(it)
         }.isNull {
@@ -104,7 +104,7 @@ object FileUtil {
             return null
         }
         val file = File(path + getSeparator() + this)
-        HttpUtil.getResponse(url.toString()).body()?.bytes()?.let {
+        HttpUtil.getResponse(url.toString()).body?.bytes()?.let {
             file.writeBytes(it)
         }.isNull {
             return null

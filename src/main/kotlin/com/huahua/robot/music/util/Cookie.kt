@@ -25,7 +25,7 @@ class Cookie {
     private val check =
         "https://ssl.ptlogin2.qq.com/check?regmaster=&pt_tea=2&pt_vcode=1&uin=%s&appid=716027609&js_ver=21122814&js_type=1&login_sig=u1cFxLxCIZyhQiuufGpUqedhK9g9VlQWIXW1ybpCg-G0-q9wd0mdzw3R9vNHFz2S&u1=https://graph.qq.com/oauth2.0/login_jump&r=0.004892586794276843&pt_uistyle=40"
     private val cookie: MutableMap<String, String> = HashMap()
-    private val nowTime = "now_time";
+    private val nowTime = "now_time"
     private val count = 0
 
     private fun scanLogin(): Boolean {

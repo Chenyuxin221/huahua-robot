@@ -13,4 +13,5 @@ class HuahuaRobotApplication
 
 fun main(args: Array<String>) {
     runApplication<HuahuaRobotApplication>(*args)
+
 }

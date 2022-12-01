@@ -9,7 +9,7 @@ import com.huahua.robot.utils.FileUtil.url
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
-import love.forte.simbot.LoggerFactory
+import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.component.mirai.MiraiComponent
 import love.forte.simbot.component.mirai.bot.MiraiBot
 import love.forte.simbot.component.mirai.event.MiraiGroupMessageEvent
@@ -94,7 +94,7 @@ class MessageUtil {
             this@getImageMessage.toResource().toImage()
         }
 
-        suspend fun String.getTempImageMessage(array: ByteArray): love.forte.simbot.message.Image<*>? {
+        fun String.getTempImageMessage(array: ByteArray): love.forte.simbot.message.Image<*>? {
             val file = this.getTempImage(array)
             file.isNull { return null }
             return file!!.toResource().toImage()

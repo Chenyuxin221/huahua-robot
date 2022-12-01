@@ -16,7 +16,7 @@ import com.huahua.robot.utils.FileUtil.getTempImage
 import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
 import love.forte.simbot.ID
-import love.forte.simbot.LoggerFactory
+import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.message.Image
 import org.springframework.stereotype.Component
@@ -65,7 +65,7 @@ class GroupImageExamineListener(
                     return
                 }
                 val fis = FileInputStream(file!!)
-                val md5 = DigestUtils.md5Digest(fis).joinToString("") { it -> format("%02X", it) }
+                val md5 = DigestUtils.md5Digest(fis).joinToString("") { format("%02X", it) }
                 fis.close()
                 file.delete()
                 val result = mapper.selectByMap(mapOf(Pair("md5", md5)))

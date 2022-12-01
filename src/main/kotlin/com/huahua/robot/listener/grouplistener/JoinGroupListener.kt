@@ -48,7 +48,7 @@ class JoinGroupListener {
      * 加群监听
      * @receiver MiraiMemberJoinRequestEvent    加群请求事件
      */
-    @RobotListen(isBoot = true, desc = "加群请求监听")
+    @RobotListen(isBoot = true, desc = "退群请求监听")
     suspend fun MiraiMemberJoinRequestEvent.joinGroup() {
         var text = message  //加群请求消息
         val group = group() //所在群

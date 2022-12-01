@@ -6,7 +6,9 @@ import com.huahua.robot.config.Config
 import com.huahua.robot.core.mapper.GroupBootStateMapper
 import love.forte.simbot.ID
 import love.forte.simbot.bot.Bot
+import love.forte.simbot.bot.BotManager
 import love.forte.simbot.bot.OriginBotManager
+import love.forte.simbot.component.mirai.MiraiComponent
 import love.forte.simbot.event.EventListenerManager
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
@@ -148,7 +150,6 @@ class RobotCore (
         }
 
         fun getBot(): Bot {
-            @Suppress("OPT_IN_USAGE")
             return OriginBotManager.getAnyBot()
         }
     }

@@ -5,8 +5,10 @@ import com.alibaba.fastjson2.JSONObject
 import com.google.gson.Gson
 import com.huahua.robot.core.common.logger
 import com.huahua.robot.core.common.then
-import io.ktor.http.*
 import okhttp3.*
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.apache.http.Header
 import org.apache.http.HttpHeaders
 import org.apache.http.client.CookieStore
@@ -24,6 +26,7 @@ import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicHeader
 import org.apache.http.util.EntityUtils
 import org.springframework.boot.logging.LogLevel
+import org.springframework.http.HttpMethod
 import java.io.IOException
 import java.net.URISyntaxException
 import java.net.URLEncoder
@@ -132,16 +135,16 @@ object HttpUtil {
         val url = if (params.isEmpty()) entity.url else "${entity.url}?${params.toQueryString()}"   // 获取请求地址
         val uri = URIBuilder(url).build()   // 创建URI
         val httpRequest: HttpRequestBase = when (method) {  // 创建HttpRequestBase
-            HttpMethod.Get -> HttpGet(uri) // 创建HttpGet请求
-            HttpMethod.Post -> HttpPost(uri).also {    // 创建HttpPost请求
+            HttpMethod.GET -> HttpGet(uri) // 创建HttpGet请求
+            HttpMethod.POST -> HttpPost(uri).also {    // 创建HttpPost请求
                 if (entity.json.isNotBlank()) { // 判断请求内容是否为空
                     it.entity = StringEntity(entity.json)   // 设置请求内容
                     it.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.mimeType)   // 设置请求内容类型
                 }
             }
 
-            HttpMethod.Delete -> HttpDelete(uri)   // 创建HttpDelete请求
-            HttpMethod.Put -> HttpPut(uri).also {  // 创建HttpPut请求
+            HttpMethod.DELETE -> HttpDelete(uri)   // 创建HttpDelete请求
+            HttpMethod.PUT -> HttpPut(uri).also {  // 创建HttpPut请求
                 if (entity.json.isNotBlank()) { // 判断请求内容是否为空
                     it.entity = StringEntity(entity.json)   // 设置请求内容
                     it.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.mimeType)   // 设置请求内容类型
@@ -164,19 +167,19 @@ object HttpUtil {
             .joinToString("&")   // 转换为QueryString
 
     fun get(requestEntity: RequestEntity.() -> Unit): ResponseEntity {  // 创建Get请求
-        return request(HttpMethod.Get, requestEntity)  // 创建请求实体
+        return request(HttpMethod.GET, requestEntity)  // 创建请求实体
     }
 
     fun post(requestEntity: RequestEntity.() -> Unit): ResponseEntity { // 创建Post请求
-        return request(HttpMethod.Post, requestEntity) // 创建请求实体
+        return request(HttpMethod.POST, requestEntity) // 创建请求实体
     }
 
     fun delete(requestEntity: RequestEntity.() -> Unit): ResponseEntity {   // 创建Delete请求
-        return request(HttpMethod.Delete, requestEntity)    // 创建请求实体
+        return request(HttpMethod.DELETE, requestEntity)    // 创建请求实体
     }
 
     fun put(requestEntity: RequestEntity.() -> Unit): ResponseEntity {  // 创建Put请求
-        return request(HttpMethod.Put, requestEntity)   // 创建请求实体
+        return request(HttpMethod.PUT, requestEntity)   // 创建请求实体
     }
 
     fun get(uri: String): ResponseEntity {  // 创建Get请求
@@ -210,9 +213,9 @@ object HttpUtil {
      * @return String 请求结果
      */
     private fun request(method: String, url: String, params: MutableMap<String, Any>): String {
-        method.isNullOrEmpty().then { throw RuntimeException("请求方法不能为空") }
-        url.isNullOrEmpty().then { throw RuntimeException("url不能为空") }
-        val httpBuilder: HttpUrl.Builder = HttpUrl.parse(url)!!.newBuilder()
+        method.isEmpty().then { throw RuntimeException("请求方法不能为空") }
+        url.isEmpty().then { throw RuntimeException("url不能为空") }
+        val httpBuilder: HttpUrl.Builder = url.toHttpUrlOrNull()!!.newBuilder()
         params.forEach { (k, v) ->
             httpBuilder.addQueryParameter(k, v.toString())
         }
@@ -238,10 +241,10 @@ object HttpUtil {
                 .build()
             val response = client.newCall(request).execute()
             logger {
-                request.url().toString()
+                request.url.toString()
                 response.isSuccessful
             }
-            response.body()!!.string()
+            response.body!!.string()
         } catch (e: IOException) {
             ""
         }
@@ -276,7 +279,7 @@ object HttpUtil {
             .writeTimeout(60000,TimeUnit.MILLISECONDS)
             .build()
         val request = Request.Builder().url(url).build()    // 创建Request对象
-        return build.newCall(request).execute().body()?.string().toString()
+        return build.newCall(request).execute().body?.string().toString()
     }
 
     /**
@@ -310,7 +313,7 @@ object HttpUtil {
      */
     private fun postOfData(url: String, map: HashMap<String, Any>): String? {
         val builder = MultipartBody.Builder()
-        MediaType.parse(PostType.DATA.value)?.let { builder.setType(it) }
+        PostType.DATA.value.toMediaTypeOrNull()?.let { builder.setType(it) }
         map.isNotEmpty().then {
             map.forEach { (k, v) ->
                 builder.addFormDataPart(k, v.toString())
@@ -323,7 +326,7 @@ object HttpUtil {
             .post(requestBody)
             .build()
         val response = client.newCall(request).execute()
-        return response.body()?.string()
+        return response.body?.string()
     }
 
 
@@ -340,14 +343,14 @@ object HttpUtil {
                 jb.put(k, v)
             }
         }
-        val requestBody = RequestBody.create(MediaType.parse(PostType.JSON.value), jb.toJSONString())
+        val requestBody = jb.toJSONString().toRequestBody(PostType.JSON.value.toMediaTypeOrNull())
         val client = OkHttpClient()
         val request = Request.Builder()
             .url(url)
             .post(requestBody)
             .build()
         val response = client.newCall(request).execute()
-        return response.body()?.string()
+        return response.body?.string()
     }
 
 

@@ -7,7 +7,7 @@ import com.huahua.robot.utils.MessageUtil.Companion.getImageMessage
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
-import love.forte.simbot.LoggerFactory
+import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.message.buildMessages
 import love.forte.simbot.message.toText
@@ -167,7 +167,7 @@ class GenshinPrayListener {
         val client = OkHttpClient()
         val request = Request.Builder().addHeader("Authorzation", code!!).url(url).build()
         val response = client.newCall(request).execute()
-        val resJson = JSON.parseObject(response.body()!!.string())
+        val resJson = JSON.parseObject(response.body!!.string())
         if (resJson.getIntValue("code") != 0) {
             log.error(URLEncoder.encode(resJson.getString("message"), "utf-8"))
             return ""

@@ -7,7 +7,7 @@ import com.huahua.robot.core.common.then
 import com.huahua.robot.utils.FileUtil.getTempImage
 import com.huahua.robot.utils.FileUtil.url
 import com.huahua.robot.utils.HttpUtil
-import love.forte.simbot.LoggerFactory
+import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.message.Image.Key.toImage
 import love.forte.simbot.resources.Resource.Companion.toResource
 import org.springframework.beans.factory.annotation.Value

@@ -5,9 +5,11 @@ import com.huahua.robot.api.entity.Message
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.utils.MessageUtil
 import love.forte.di.annotation.Beans
-import love.forte.simbot.LoggerFactory
 import love.forte.simbot.event.GroupMessageEvent
+import love.forte.simbot.logger.LoggerFactory
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.springframework.stereotype.Component
 import java.io.IOException
 import kotlin.reflect.jvm.jvmName
@@ -37,7 +39,7 @@ class SaveGroupMessage {
             sendTime = System.currentTimeMillis())
         val str:String = Gson().toJson(message).toString()
         log.info(str)
-        val body = RequestBody.create(MediaType.parse("application/json"), str)
+        val body = str.toRequestBody("application/json".toMediaTypeOrNull())
         val request = Request.Builder()
             .post(body)
             .url(url)
@@ -50,7 +52,7 @@ class SaveGroupMessage {
             }
 
             override fun onResponse(call: Call, response: Response) {
-                val result = response.body()?.string()
+                val result = response.body?.string()
                 log.info(result)
             }
 

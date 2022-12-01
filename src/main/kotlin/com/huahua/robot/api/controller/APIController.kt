@@ -5,7 +5,7 @@ import com.huahua.robot.api.entity.Photo
 import com.huahua.robot.api.mapper.PhotoMapper
 import com.huahua.robot.api.result.Result
 import com.huahua.robot.api.result.ResultStatus
-import love.forte.simbot.LoggerFactory
+import love.forte.simbot.logger.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
