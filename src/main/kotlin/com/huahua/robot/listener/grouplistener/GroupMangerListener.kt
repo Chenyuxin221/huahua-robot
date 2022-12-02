@@ -9,6 +9,7 @@ import com.huahua.robot.core.enums.RobotPermission
 import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.Permission
 import com.huahua.robot.utils.PermissionUtil.Companion.authorPermission
+import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToMember
 import com.huahua.robot.utils.PermissionUtil.Companion.botPermission
 import love.forte.di.annotation.Beans
@@ -18,6 +19,8 @@ import love.forte.simboot.filter.MatchType
 import love.forte.simbot.ID
 import love.forte.simbot.component.mirai.MiraiMember
 import love.forte.simbot.component.mirai.event.MiraiGroupMessageEvent
+import love.forte.simbot.component.mirai.message.MiraiQuoteReply
+import love.forte.simbot.component.mirai.message.SimbotOriginalMiraiMessage
 import love.forte.simbot.definition.Group
 import love.forte.simbot.definition.Member
 import love.forte.simbot.event.GroupMessageEvent
@@ -26,6 +29,9 @@ import love.forte.simbot.message.buildMessages
 import love.forte.simbot.message.plus
 import love.forte.simbot.message.toText
 import love.forte.simbot.tryToLong
+import net.mamoe.mirai.contact.PermissionDeniedException
+import net.mamoe.mirai.message.data.MessageSource.Key.recall
+import net.mamoe.mirai.message.data.QuoteReply
 import kotlin.time.Duration.Companion.minutes
 
 
@@ -171,6 +177,45 @@ class GroupMangerListener {
         }
     }
 
+    @RobotListen(
+        isBoot = true,
+        desc = "撤回操作",
+        permissionsRequiredByTheRobot = RobotPermission.ADMINISTRATOR
+    )
+    @Filter("撤回", matchType = MatchType.TEXT_STARTS_WITH)
+    suspend fun GroupMessageEvent.messageRecall() {
+        val messages = messageContent.messages
+        messages.forEach {
+            if (it is MiraiQuoteReply){
+                if (!getBotManagerPermission(group(), author()) &&  //成员没有机器人管理权限
+                    authorPermission() < Permission.ADMINISTRATORS  //成员群权限小于管理员
+                ) {
+                    send("你的权限不足，无法进行此操作")
+                    return
+                }
+                val originMiraiQuoteReply = messages[MiraiQuoteReply].firstOrNull()?.originalMiraiMessage
+                    ?: messages.firstNotNullOf { element ->
+                        (element as? SimbotOriginalMiraiMessage)?.originalMiraiMessage as? QuoteReply
+                    }
+                try {
+                    originMiraiQuoteReply.source.recall()
+                    if (botCompareToAuthor()) {
+                        messageContent.delete()
+                    }
+                    val msg =
+                        "「${author().nickOrUsername}」 通过bot撤回了「${group().member(originMiraiQuoteReply.source.fromId.ID)!!.nickOrUsername}」的一条消息"
+                    send(msg)
+                } catch (e: PermissionDeniedException) {
+                    send("我无权操作此消息")
+                } catch (e: Exception) {
+                    send("撤回失败，无法撤回此消息：${e.message}")
+                }
+            }
+        }
+
+    }
+
+
     /**
      * 踢人操作
      * -------------尚未测试
@@ -263,7 +308,6 @@ class GroupMangerListener {
     suspend fun GroupMessageEvent.setManager(@FilterValue("value") value: String) {
         messageContent.messages.forEach {
             if (it is At) {
-                val permission = getBotManagerPermission(group(), author())
                 if (author().id != RobotCore.ADMINISTRATOR.ID) {
                     reply(" 权限设置失败，你的权限不足")
                     return
