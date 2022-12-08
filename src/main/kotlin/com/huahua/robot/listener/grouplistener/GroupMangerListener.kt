@@ -185,20 +185,20 @@ class GroupMangerListener {
     @Filter("撤回", matchType = MatchType.TEXT_STARTS_WITH)
     suspend fun GroupMessageEvent.messageRecall() {
         val messages = messageContent.messages
-        if (!getBotManagerPermission(group(), author()) &&  //成员没有机器人管理权限
-            authorPermission() < Permission.ADMINISTRATORS  //成员群权限小于管理员
-        ) {
-            send("你的权限不足，无法进行此操作")
-            return
-        }
         val originMiraiQuoteReply = messages[MiraiQuoteReply].firstOrNull()?.originalMiraiMessage
             ?: messages.firstNotNullOf { element ->
                 (element as? SimbotOriginalMiraiMessage)?.originalMiraiMessage as? QuoteReply
             }
         try {
-            originMiraiQuoteReply.source.recall()
-            if (botCompareToAuthor()) {
-                messageContent.delete()
+            if (!getBotManagerPermission(group(), author()) &&  //成员没有机器人管理权限
+                authorPermission() < Permission.ADMINISTRATORS && //成员群权限小于管理员
+                originMiraiQuoteReply.source.fromId.ID != author().id  //成员不是撤回自己的消息
+            ) {
+                return
+            }
+            originMiraiQuoteReply.source.recall()   //撤回原消息
+            if (botCompareToAuthor()) {     //将bot权限和发送人比较
+                messageContent.delete()     //如果bot权限大于发送人则撤回此条消息
             }
             val msg =
                 "「${author().nickOrUsername}」 通过bot撤回了「${group().member(originMiraiQuoteReply.source.fromId.ID)!!.nickOrUsername}」的一条消息"
@@ -213,7 +213,6 @@ class GroupMangerListener {
 
     /**
      * 踢人操作
-     * -------------尚未测试
      * @receiver GroupMessageEvent
      */
     @RobotListen(
@@ -223,7 +222,6 @@ class GroupMangerListener {
     )
     @Filter("踢", matchType = MatchType.TEXT_STARTS_WITH)
     suspend fun GroupMessageEvent.kickPerson() {
-
         messageContent.messages.forEach {
             (it is At).then {
                 if (!getBotManagerPermission(group(), author()) &&  //成员没有机器人管理权限
@@ -352,24 +350,23 @@ class GroupMangerListener {
         }
         send("你没有操作权限")
     }
+}
 
-    fun getBotManagerPermission(group: Group, user: Member): Boolean = getBotManagerPermission(group.id, user.id)
-    fun getBotManagerPermission(group: ID, user: ID): Boolean =
-        getBotManagerPermission(group.toString(), user.toString())
+fun getBotManagerPermission(group: Group, user: Member): Boolean = getBotManagerPermission(group.id, user.id)
+fun getBotManagerPermission(group: ID, user: ID): Boolean =
+    getBotManagerPermission(group.toString(), user.toString())
 
-    fun getBotManagerPermission(group: String, user: String): Boolean {
-        val url = "http://127.0.0.1:8080/manager/query?groupId=${group}&userId=$user"
-        val body = HttpUtil.get(url).response
-        try {
-            if (JSON.parseObject(body).getIntValue("code") == 200) {
-                return true
-            }
-            return false
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return false
+fun getBotManagerPermission(group: String, user: String): Boolean {
+    val url = "http://127.0.0.1:8080/manager/query?groupId=${group}&userId=$user"
+    val body = HttpUtil.get(url).response
+    try {
+        if (JSON.parseObject(body).getIntValue("code") == 200) {
+            return true
         }
-
+        return false
+    } catch (e: Exception) {
+        e.printStackTrace()
+        return false
     }
 
 }

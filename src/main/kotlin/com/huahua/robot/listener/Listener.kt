@@ -3,7 +3,9 @@
 package com.huahua.robot.listener
 
 import com.alibaba.fastjson2.JSON
+import com.alibaba.fastjson2.JSONException
 import com.alibaba.fastjson2.JSONObject
+import com.github.plexpt.chatgpt.Chatbot
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.*
 import com.huahua.robot.entity.Chat
@@ -25,16 +27,17 @@ import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
 import love.forte.simbot.ID
-import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.component.mirai.message.MiraiSendOnlyAudio
 import love.forte.simbot.event.FriendMessageEvent
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.event.MessageEvent
+import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.message.*
 import love.forte.simbot.resources.FileResource
 import love.forte.simbot.resources.Resource.Companion.toResource
 import love.forte.simbot.resources.URLResource
 import love.forte.simbot.tryToLong
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -85,19 +88,18 @@ class Listener {
             }
         }
         val flag: MessageReceipt?
-
+        val message = getForwardImageMessages(imageList, RobotCore.BOTID.tryToLong())
+        flag = send(message!!) // 发送消息并获取标记
         if (this is GroupMessageEvent) { //判断是否为群聊环境
-            val message = getForwardImageMessages(imageList, RobotCore.BOTID.tryToLong())
-            flag = send(message!!) // 发送消息并获取标记
             botCompareToAuthor().then { //判断bot是否有权限
                 author().mute((5).minutes)  // 禁言5分钟
                 messageContent.delete()// 撤回消息
             }
-            bot.launch {    // 启动协程
-                if (flag != null && flag.isSuccess) {   // 判断发送是否成功
-                    delay(180000)    // 由于转发消息图片过多，上传较慢，故延迟三分钟
-                    flag.delete()  // 通过标记撤回此图片
-                }
+        }
+        bot.launch {    // 启动协程
+            if (flag != null && flag.isSuccess) {   // 判断发送是否成功
+                delay(180000)    // 由于转发消息图片过多，上传较慢，故延迟三分钟
+                flag.delete()  // 通过标记撤回此图片
             }
         }
 
@@ -347,7 +349,7 @@ class Listener {
      * @receiver GroupMessageEvent
      */
     @RobotListen(isBoot = true, desc = "陪聊服务")
-    @Filter(targets = Filter.Targets(atBot = true))
+    @Filter(value = "^!>", targets = Filter.Targets(atBot = true), matchType = MatchType.REGEX_MATCHES)
     suspend fun MessageEvent.chat() {
         val msg = messageContent.plainText.trim()   // 获取消息内容
         msg.isEmpty().then {    // 判断消息内容是否为空
@@ -607,6 +609,32 @@ class Listener {
             text(str)
         }
         send(message)
+    }
+
+    /**
+     * 获取配置项里面的token
+     */
+    @Value("\${huahua.config.gpt.token:#{null}}")
+    var chatGtpToken: String? = ""
+
+    @RobotListen("ChatGpt", isBoot = true)
+    @Filter(">{{questions}}", matchType = MatchType.REGEX_MATCHES)
+    suspend fun MessageEvent.chatGpt(@FilterValue("questions") questions: String) {
+        try {
+            val token = chatGtpToken
+            token.isNullOrEmpty().then { return } //未配置token则返回
+            val response = Chatbot(token).getChatResponse(questions)
+            val message = response["message"].toString()
+            if (message.isEmpty()) {
+                logger { JSON.toJSONString(response) }
+                return
+            }
+            reply(message)
+        } catch (e: JSONException) {
+            reply("哎呀，出错啦")
+        } catch (e: Exception) {
+            reply(e.printStackTrace().toString() ?: "出错了")
+        }
     }
 
 }

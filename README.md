@@ -76,7 +76,9 @@ bot.bot
     },
     "loginCacheEnabled": true,
     "convertLineSeparator": true,
-    "recallMessageCacheStrategy": "MEMORY_LRU"
+    "recallMessageCacheStrategyConfig": {
+      "type": "memory_lru"
+    }
   }
 }
 ```
@@ -102,6 +104,8 @@ huahua.config.morningPaper.groups=123,456,789 #需要每日早报的群
 huahua.config.exclude_Groups=123,456 #过滤掉话多的群，钱多可以不用
 huahua.config.baidubce.client_id=百度ai Api Key
 huahua.config.baidubce.client_secret=百度ai Secret KEY
+#chatgpt的token，具体教程可以翻看最下面
+huahua.config.gpt.token=你的token
 ```
 
 #### 付费接口地址
@@ -205,3 +209,12 @@ java -jar "你打包好后的jar包"
 ​ 请在手机上打开设备锁，再重新申请验证
 
 - ### 不要在*.properties文件里加一些奇奇怪怪的配置项
+- ### 如何获取ChatGpt的token
+
+前提：需要你能登录谷歌邮箱
+注册需要非国内手机号，可以通过[此网站](https://sms-activate.org/cn)获取，详细教程可以百度
+注册并登录[官网](https://chat.openai.com/)
+登录完成后，按f12然后选择网络视图，之后的操作不要关闭
+闲聊两句，点击名称里面的conversation文件，选择标头往下面翻找到请求标头(前面有个箭头)，在
+往下翻找到cookie（黑体加粗），仔细寻找里面的__Secure-next-auth.session-token，
+=后面的就是需要的token了，大概是后面的所有如果后面没有;的话

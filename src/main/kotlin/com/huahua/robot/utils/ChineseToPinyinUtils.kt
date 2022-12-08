@@ -1,5 +1,6 @@
 package com.huahua.robot.utils
 
+import com.huahua.robot.core.common.logger
 import com.huahua.robot.core.common.then
 import net.sourceforge.pinyin4j.PinyinHelper
 import net.sourceforge.pinyin4j.format.HanyuPinyinCaseType
@@ -47,20 +48,26 @@ object ChineseToPinyinUtils {
                 if (str.codePointAt(i) <= 128) {
                     py += c + separator
                 } else {
-                    t = PinyinHelper.toHanyuPinyinStringArray(c, format)
-                    if (t == null) {
-                        py += c
-                    } else {
-                        temp = t[0]
-                        if (type == Type.FIRSTUPPER) {
-                            temp = t[0].uppercase(Locale.getDefault())[0] + temp.substring(1)
-                        }
-                        temp = temp.substring(0, temp.length - 1)
-                        py += temp + (if (i == str.length - 1) {
-                            ""
+                    try {
+                        t = PinyinHelper.toHanyuPinyinStringArray(c, format)
+                        if (t == null) {
+                            py += c
                         } else {
-                            separator
-                        })
+                            temp = t[0]
+                            if (type == Type.FIRSTUPPER) {
+                                temp = t[0].uppercase(Locale.getDefault())[0] + temp.substring(1)
+                            }
+                            temp = temp.substring(0, temp.length - 1)
+                            py += temp + (if (i == str.length - 1) {
+                                ""
+                            } else {
+                                separator
+                            })
+                        }
+                    } catch (e: NullPointerException) {
+                        logger { "不做处理" }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                     }
                 }
             }
