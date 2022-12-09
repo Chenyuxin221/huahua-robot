@@ -10,6 +10,7 @@ import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.*
 import com.huahua.robot.entity.Chat
 import com.huahua.robot.entity.Tuizi
+import com.huahua.robot.service.SwitchSateService
 import com.huahua.robot.utils.FileUtil.getTempImage
 import com.huahua.robot.utils.FileUtil.getTempMusic
 import com.huahua.robot.utils.FileUtil.url
@@ -48,7 +49,9 @@ import kotlin.time.Duration.Companion.minutes
 
 @Component
 @SuppressWarnings("all")
-class Listener {
+class Listener(
+    val switchSateService: SwitchSateService,
+) {
     private val log = LoggerFactory.getLogger(Listener::class.jvmName) // 日志
 
     /**
@@ -621,6 +624,17 @@ class Listener {
     @Filter(">{{questions}}", matchType = MatchType.REGEX_MATCHES)
     suspend fun MessageEvent.chatGpt(@FilterValue("questions") questions: String) {
         try {
+            if (this is GroupMessageEvent) {
+                val result = switchSateService.get(group().id.toString(), "聊天")
+                if (result == null) {  //没有将群加入缓存
+                    switchSateService.set(group().id.toString(), "聊天", false)
+                    return
+                }
+                if (!result) {   //处于关闭状态
+                    logger { "未开启" }
+                    return
+                }
+            }
             val token = chatGtpToken
             token.isNullOrEmpty().then { return } //未配置token则返回
             val response = Chatbot(token).getChatResponse(questions)

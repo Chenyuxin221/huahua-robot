@@ -97,6 +97,8 @@ spring.datasource.username=用户名
 spring.datasource.password=用户密码
 huahua.account.admin.id=管理员QQ号
 huahua.account.bot.id=BotQQ号
+spring.redis.host=127.0.0.1
+spring.redis.port=6379
 #可选
 huahua.config.boot-command=“启动文件路径”
 huahua.config.morningPaper.groups=123,456,789 #需要每日早报的群

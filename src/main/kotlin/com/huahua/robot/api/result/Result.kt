@@ -11,14 +11,14 @@ import lombok.ToString
  */
 @ToString
 @Getter
-class Result<T> constructor(
+class Result<T>(
     /** 返回状态码 */
     val code: Int,
     /** 返回信息 */
     val msg: String,
     /** 返回参数 */
     val data: T,
-    val timeTamp: Long,
+    timesTamp: Long,
 ) {
     companion object {
         private val time = System.currentTimeMillis()

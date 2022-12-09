@@ -6,6 +6,7 @@ import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.*
 import com.huahua.robot.core.enums.RobotPermission
 import com.huahua.robot.entity.LuckyTime
+import com.huahua.robot.service.SwitchSateService
 import com.huahua.robot.utils.*
 import com.huahua.robot.utils.FileUtil.getTempImage
 import com.huahua.robot.utils.FileUtil.url
@@ -42,7 +43,9 @@ import kotlin.time.Duration.Companion.minutes
  * @date 2022-06-13 17:34
  */
 @Beans
-class GroupListener {
+class GroupListener(
+    val switchSateService: SwitchSateService,
+) {
 
     private val lotteryPrefix: List<String> = listOf("chou", "cou", "c", "抽", "操", "艹", "草")    //抽奖前缀
     private val lotterySuffix: List<String> = listOf("jiang", "j", "奖", "wo", "w", "我") // 抽奖后缀
@@ -90,6 +93,13 @@ class GroupListener {
         permissionsRequiredByTheRobot = RobotPermission.ADMINISTRATOR
     )
     suspend fun GroupMessageEvent.luckDraw() {
+        val res = switchSateService.get(group().id.toString(), "抽奖")
+        if (res == null) {
+            switchSateService.set(group().id.toString(), "抽奖", false)
+            return
+        }
+        if (!res) return
+
         val msg = messageContent.plainText  // 获取消息内容
         var time = 0
         val url =

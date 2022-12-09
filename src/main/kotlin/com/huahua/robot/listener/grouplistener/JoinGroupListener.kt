@@ -4,19 +4,18 @@ import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.Sender
 import com.huahua.robot.core.common.logger
 import com.huahua.robot.core.common.send
-import com.huahua.robot.core.common.then
+import com.huahua.robot.service.SwitchSateService
 import com.huahua.robot.utils.Permission
 import com.huahua.robot.utils.PermissionUtil.Companion.authorPermission
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.withTimeoutOrNull
 import love.forte.di.annotation.Beans
-import love.forte.simboot.annotation.Filter
-import love.forte.simboot.annotation.FilterValue
-import love.forte.simboot.filter.MatchType
 import love.forte.simbot.ID
 import love.forte.simbot.component.mirai.event.MiraiMemberJoinEvent
 import love.forte.simbot.component.mirai.event.MiraiMemberJoinRequestEvent
-import love.forte.simbot.event.*
+import love.forte.simbot.event.GroupMessageEvent
+import love.forte.simbot.event.JoinRequestEvent
+import love.forte.simbot.event.RequestEvent
 
 /**
  * ClassName: JoinGroupListner
@@ -25,12 +24,14 @@ import love.forte.simbot.event.*
  * @date 2022-05-10 17:26
  */
 @Beans
-class JoinGroupListener {
+class JoinGroupListener(
+    val switchSateService: SwitchSateService,
+) {
 
     /**
      * 入群申请自动同意
      */
-    private var state = hashMapOf<ID,Boolean>()
+    private var state = hashMapOf<ID, Boolean>()
 
     /**
      * 加群监听
@@ -51,27 +52,27 @@ class JoinGroupListener {
      * 加群监听
      * @receiver MiraiMemberJoinRequestEvent    加群请求事件
      */
-    @RobotListen(isBoot = true, desc = "入群请求监听")
-    suspend fun MiraiMemberJoinRequestEvent.joinGroup() {
-        var text = message  //加群请求消息
-        val group = group() //所在群
-        val member = user() //加群人
-        if (message.isEmpty()){
-            text = "啊这...他好像什么也没填"
-        }
-        stateInit()
-        Sender.sendGroupMsg(
-            group.id.toString(),
-            "入群申请：\n申请人：${member.nickOrUsername}\n申请原因：${text}\n请管理员前往处理"
-        )
-        state[group().id]?.then {
-            accept()
-            Sender.sendGroupMsg(group.id.toString(), "已自动同意申请")
-        }
-    }
+//    @RobotListen(isBoot = true, desc = "入群请求监听")
+//    suspend fun MiraiMemberJoinRequestEvent.joinGroup() {
+//        var text = message  //加群请求消息
+//        val group = group() //所在群
+//        val member = user() //加群人
+//        if (message.isEmpty()){
+//            text = "啊这...他好像什么也没填"
+//        }
+//        stateInit()
+//        Sender.sendGroupMsg(
+//            group.id.toString(),
+//            "入群申请：\n申请人：${member.nickOrUsername}\n申请原因：${text}\n请管理员前往处理"
+//        )
+//        state[group().id]?.then {
+//            accept()
+//            Sender.sendGroupMsg(group.id.toString(), "已自动同意申请")
+//        }
+//    }
 
-    var a: JoinRequestEvent? = null
-    var tampMap = mutableMapOf<String, String>()
+    var a: JoinRequestEvent? = null     //入群请求
+    var tampMap = mutableMapOf<String, String>()    //存入请求人QQ号
 
     /**
      * 测试功能
@@ -89,9 +90,13 @@ class JoinGroupListener {
         val msg =
             "入群申请\n申请人:${member.username}「${member.id}」\n申请理由/答案：${text}\n申请状态:${type}\n是否同意申请:\n同意：yes\n拒绝:no"
         val event = (this as MiraiMemberJoinRequestEvent)
-        stateInit()
         Sender.sendGroupMsg(group().id.toString(), msg)
-        if (state[group().id] == true) {
+        var result = switchSateService.get(group().id.toString(), "加群自动同意")  //从redis获取结果
+        if (result == null) {  //没有结果
+            switchSateService.set(group().id.toString(), "加群自动同意", false) //将该群状态初始化为false
+        }
+        result = switchSateService.get(group().id.toString(), "加群自动同意") // 重新获取结果
+        if (result!!) {  // 此时不应该为null，获取返回结果
             accept()
             Sender.sendGroupMsg(group().id.toString(), "已自动同意该申请")
             return
@@ -133,64 +138,6 @@ class JoinGroupListener {
                 tampMap.clear()
                 logger { "超时了" }
             }
-        }
-    }
-
-
-    /**
-     * 自动入群设置
-     * @receiver GroupMessageEvent
-     * @param state String 设置
-     */
-    @RobotListen("自动同意入群申请设置", isBoot = true)
-    @Filter("{{state}}自动同意", matchType = MatchType.REGEX_MATCHES)
-    suspend fun GroupMessageEvent.automaticConsent(@FilterValue("state") text: String) {
-        stateInit()
-        if (authorPermission() < Permission.ADMINISTRATORS){
-            send("玩蛋去吧")
-            return
-        }
-        text.isEmpty().then { return }
-        when(text){
-            "设置","打开","开启" -> {
-                if (state[group().id]==true){
-                    send("已经处于开启状态了")
-                    return
-                }
-                state[group().id] = true
-                send("已开启群聊【${group().id}】 的自动同意入群申请")
-            }
-            "取消","关闭" ->{
-                if (state[group().id]==false){
-                    send("该功能已处于关闭状态")
-                    return
-                }
-                state[group().id] = true
-                send("已关闭群聊【${group().id}】 的自动同意入群申请")
-            }
-            else -> return
-        }
-    }
-
-    @RobotListen(desc = "状态", isBoot = true)
-    @Filter(".set")
-    suspend fun GroupMessageEvent.state(){
-        stateInit()
-        val str = """
-            --------------------
-            自动同意入群：${state[group().id]}
-            --------------------
-        """.trimIndent()
-        send(str)
-    }
-    suspend fun GroupMessageEvent.stateInit(){
-        if (state[group().id] == null){
-            state[group().id] = true
-        }
-    }
-    suspend fun MiraiMemberJoinRequestEvent.stateInit(){
-        if (state[group().id] == null){
-            state[group().id] = false
         }
     }
 }
