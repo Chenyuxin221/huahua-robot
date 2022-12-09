@@ -5,6 +5,7 @@ import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.RobotCore
 import com.huahua.robot.core.common.logger
 import com.huahua.robot.service.SwitchSateService
+import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.TimeUtil
 import kotlinx.coroutines.runBlocking
 import love.forte.simbot.ID
@@ -20,8 +21,13 @@ class test(
 
     @RobotListen("启动事件")
     suspend fun BotStartedEvent.start() {
-        bot.contact(RobotCore.ADMINISTRATOR.ID)?.send("${TimeUtil.getNowTime()}: 我好了")
-        initRedis()
+        bot.contact(RobotCore.ADMINISTRATOR.ID)?.send("${getSentence()}\n---${TimeUtil.getNowTime()}")
+        initRedis() // 将数据库中的数据缓存进redis
+    }
+
+    private fun getSentence(): String {
+        val url = "https://xiaobai.klizi.cn/API/other/wtqh.php"
+        return HttpUtil.getBody(url)
     }
 
     fun unregisterEvent() {
@@ -36,7 +42,6 @@ class test(
     }
 
 
-    //    @PostConstruct
     fun initRedis() {
 
         val resul = mapper.selectList(null)

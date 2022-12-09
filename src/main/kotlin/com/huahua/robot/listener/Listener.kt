@@ -11,15 +11,13 @@ import com.huahua.robot.core.common.*
 import com.huahua.robot.entity.Chat
 import com.huahua.robot.entity.Tuizi
 import com.huahua.robot.service.SwitchSateService
+import com.huahua.robot.utils.*
 import com.huahua.robot.utils.FileUtil.getTempImage
 import com.huahua.robot.utils.FileUtil.getTempMusic
 import com.huahua.robot.utils.FileUtil.url
-import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.MessageUtil.Companion.getImageMessage
+import com.huahua.robot.utils.PermissionUtil.Companion.authorPermission
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
-import com.huahua.robot.utils.TimeUtil
-import com.huahua.robot.utils.UrlUtil
-import com.huahua.robot.utils.getForwardImageMessages
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -39,9 +37,13 @@ import love.forte.simbot.resources.Resource.Companion.toResource
 import love.forte.simbot.resources.URLResource
 import love.forte.simbot.tryToLong
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.logging.LogLevel
+import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.data.redis.serializer.RedisSerializer
 import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.TimeUnit
+import javax.annotation.Resource
 import kotlin.reflect.jvm.jvmName
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.minutes
@@ -620,6 +622,9 @@ class Listener(
     @Value("\${huahua.config.gpt.token:#{null}}")
     var chatGtpToken: String? = ""
 
+    @Resource
+    lateinit var redisTemplate: RedisTemplate<String, String>
+
     @RobotListen("ChatGpt", isBoot = true)
     @Filter(">{{questions}}", matchType = MatchType.REGEX_MATCHES)
     suspend fun MessageEvent.chatGpt(@FilterValue("questions") questions: String) {
@@ -635,9 +640,21 @@ class Listener(
                     return
                 }
             }
-            val token = chatGtpToken
-            token.isNullOrEmpty().then { return } //未配置token则返回
-            val response = Chatbot(token).getChatResponse(questions)
+            redisTemplate.valueSerializer = RedisSerializer.json()
+            redisTemplate.keySerializer = RedisSerializer.string()
+            var tokenTemplate = redisTemplate.opsForValue().get("chatGtpToken") //读取缓存里的token
+            if (tokenTemplate == null) {   //没有token缓存
+                if (chatGtpToken == null) {    //没有配置token
+                    logger(LogLevel.ERROR) {
+                        "如需要此功能，请配置token或者使用指令（绑定+Token）"
+                    }
+                    return
+                }
+                redisTemplate.opsForValue().set("chatGtpToken", chatGtpToken!!) //将token缓存到redis
+            }
+
+            tokenTemplate = redisTemplate.opsForValue().get("chatGtpToken") // 重新读取缓存内的token
+            val response = Chatbot(tokenTemplate).getChatResponse(questions)
             val message = response["message"].toString()
             if (message.isEmpty()) {
                 logger { JSON.toJSONString(response) }
@@ -649,6 +666,23 @@ class Listener(
         } catch (e: Exception) {
             reply(e.printStackTrace().toString() ?: "出错了")
         }
+    }
+
+    @RobotListen("token绑定")
+    @Filter("绑定{{token}}", matchType = MatchType.REGEX_MATCHES)
+    suspend fun MessageEvent.bindingToken(@FilterValue("token") token: String) {
+        val permission: Boolean = when (this) {
+            is GroupMessageEvent -> author().id == RobotCore.ADMINISTRATOR.ID || authorPermission() != Permission.MEMBER
+            is FriendMessageEvent -> friend().id == RobotCore.ADMINISTRATOR.ID
+            else -> false
+        }
+        if (!permission) {
+            send("哎呀，你的权限不足,无法绑定你的token呢")
+            return
+        }
+
+        redisTemplate.opsForValue().set("chatGtpToken", token) // 将接收到的token缓存进redis
+
     }
 
 }
