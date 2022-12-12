@@ -5,6 +5,7 @@ import com.alibaba.fastjson2.JSONException
 import com.github.plexpt.chatgpt.Chatbot
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.RobotCore
+import com.huahua.robot.core.common.isNull
 import com.huahua.robot.core.common.logger
 import com.huahua.robot.core.common.send
 import com.huahua.robot.service.SwitchSateService
@@ -46,6 +47,11 @@ class ChatGptListener(
     @Resource
     lateinit var redisTemplate: RedisTemplate<String, String>
 
+    /**
+     *
+     */
+    val map = hashMapOf<String, Chatbot>()
+
     @RobotListen("ChatGpt", isBoot = true)
     @Filter(">{{questions}}", matchType = MatchType.REGEX_MATCHES)
     suspend fun MessageEvent.chatGpt(@FilterValue("questions") questions: String) {
@@ -84,7 +90,30 @@ class ChatGptListener(
             cfClearanceTemplate = redisTemplate.opsForValue().get("chatGtpCfClearance")
             val userAgent =
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.46"
-            val response = Chatbot(tokenTemplate, cfClearanceTemplate, userAgent).getChatResponse(questions)
+            val chatBot = when (this) {
+                is GroupMessageEvent -> {
+                    val bot = map["${group().id}:${author().id}"]
+                    if (bot == null) {
+                        map["${group().id}:${author().id}"] = Chatbot(tokenTemplate, cfClearanceTemplate, userAgent)
+                    }
+                    map["${group().id}:${author().id}"]
+                }
+
+                is FriendMessageEvent -> {
+                    val bot = map[friend().id.toString()]
+                    if (bot == null) {
+                        map[friend().id.toString()] = Chatbot(tokenTemplate, cfClearanceTemplate, userAgent)
+                    }
+                    map[friend().id.toString()]
+                }
+
+                else -> null
+            }
+            chatBot.isNull {
+                reply("哎呀，chatBot初始化失败了")
+                return
+            }
+            val response = chatBot!!.getChatResponse(questions)
             val message = response["message"].toString()
             if (message.isEmpty()) {
                 logger { JSON.toJSONString(response) }
@@ -92,8 +121,10 @@ class ChatGptListener(
             }
             reply(message)
         } catch (e: JSONException) {
-            reply("哎呀，出错啦")
-            e.printStackTrace()
+            if (map.isNotEmpty()) {
+                map.clear()
+            }
+            reply("哎呀，cookie失效或openAI更新了")
         } catch (e: Exception) {
             reply(e.message ?: "出错了")
             e.printStackTrace()
@@ -137,6 +168,12 @@ class ChatGptListener(
         reply("绑定成功,你现在的chatGtpCfClearance为：$result")
     }
 
+
+    /**
+     * 绑定权限
+     * @param event MessageEvent
+     * @return Boolean
+     */
     private suspend fun authorOwnOrNotPermission(event: MessageEvent) = when (event) {
         is GroupMessageEvent -> event.author().id == RobotCore.ADMINISTRATOR.ID || event.authorPermission() != Permission.MEMBER
         is FriendMessageEvent -> event.friend().id == RobotCore.ADMINISTRATOR.ID
