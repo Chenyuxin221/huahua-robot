@@ -108,6 +108,7 @@ huahua.config.baidubce.client_id=百度ai Api Key
 huahua.config.baidubce.client_secret=百度ai Secret KEY
 #chatgpt的token，具体教程可以翻看最下面
 huahua.config.gpt.token=你的token
+huahua.config.gpt.cf_clearance=你的cf_clearance
 ```
 
 #### 付费接口地址
@@ -220,3 +221,4 @@ java -jar "你打包好后的jar包"
 闲聊两句，点击名称里面的conversation文件，选择标头往下面翻找到请求标头(前面有个箭头)，在
 往下翻找到cookie（黑体加粗），仔细寻找里面的__Secure-next-auth.session-token，
 =后面的就是需要的token了，大概是后面的所有如果后面没有;的话
+cf_clearance同理，不过通常就在token的前面

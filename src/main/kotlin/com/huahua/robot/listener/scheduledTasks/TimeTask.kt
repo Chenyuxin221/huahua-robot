@@ -68,7 +68,7 @@ class TimeTask(
                     return
                 }
             } catch (e: Exception) {
-                Sender.sendAdminMsg("更新失败：${e.printStackTrace()}")
+                Sender.sendAdminMsg("更新失败：${e.message}")
                 e.printStackTrace()
             }
         }

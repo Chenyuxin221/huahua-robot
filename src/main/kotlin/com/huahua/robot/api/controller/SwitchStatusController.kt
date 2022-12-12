@@ -57,7 +57,7 @@ class SwitchStatusController(
             wrapper.eq("groupId", groupId).eq("func", func).set("state", state)
             mapper.update(null, wrapper)
         } else {
-            map["statu"] = state
+            map["state"] = state
             mapper.insert(FuncSwitch(groupId = groupId, func = func, state = state))
         }
         return Result.success(FuncSwitch(groupId = groupId, func = func, state = state))
