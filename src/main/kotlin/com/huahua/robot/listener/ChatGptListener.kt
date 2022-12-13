@@ -63,7 +63,8 @@ class ChatGptListener(
                     return
                 }
                 if (!result) {   //处于关闭状态
-                    logger { "未开启" }
+                    logger { "当前群未开启此功能" }
+                    reply("当前群未开启此功能")
                     return
                 }
             }
@@ -114,10 +115,13 @@ class ChatGptListener(
                 return
             }
             val response = chatBot!!.getChatResponse(questions)
-            val message = response["message"].toString()
+            var message = response["message"].toString()
             if (message.isEmpty()) {
                 logger { JSON.toJSONString(response) }
                 return
+            }
+            if (message == "null") {
+                message = "请求过于频繁，请稍后再试..."
             }
             reply(message)
         } catch (e: JSONException) {

@@ -22,12 +22,12 @@ class GroupMemberLeaveListener {
     suspend fun MiraiMemberLeaveEvent.leaveGroup() {
         val user = member()
         val operator = operator()
-        group().send("就在刚刚,${user.nickOrUsername}离开了我们")
+
         if (operator===user){
-            group().send("啊这...他是自己退群的啊，那没事了")
+            group().send("就在刚刚,${user.nickOrUsername}离开了我们")
         }else{
             if (operator != null) {
-                group().send("嗯？他是触犯天条被${operator.nickOrUsername}移出去的")
+                group().send("${user.nickOrUsername}被${operator.nickOrUsername}挪出去了")
             }
         }
     }

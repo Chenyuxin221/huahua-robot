@@ -2,12 +2,15 @@ package com.huahua.robot.listener.grouplistener
 
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.Sender
+import com.huahua.robot.core.common.isNull
 import com.huahua.robot.core.common.logger
 import com.huahua.robot.core.common.send
 import com.huahua.robot.service.SwitchSateService
 import com.huahua.robot.utils.Permission
 import com.huahua.robot.utils.PermissionUtil.Companion.authorPermission
+import com.huahua.robot.utils.Timer
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import love.forte.di.annotation.Beans
 import love.forte.simbot.ID
@@ -16,6 +19,11 @@ import love.forte.simbot.component.mirai.event.MiraiMemberJoinRequestEvent
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.event.JoinRequestEvent
 import love.forte.simbot.event.RequestEvent
+import love.forte.simbot.message.At
+import love.forte.simbot.message.buildMessages
+import love.forte.simbot.tryToLong
+import net.mamoe.mirai.contact.MemberPermission
+import java.util.concurrent.TimeUnit
 
 /**
  * ClassName: JoinGroupListner
@@ -32,6 +40,7 @@ class JoinGroupListener(
      * 入群申请自动同意
      */
     private var state = hashMapOf<ID, Boolean>()
+    private val groupReply = hashMapOf<String, Timer<MiraiMemberJoinEvent>>()
 
     /**
      * 加群监听
@@ -43,33 +52,35 @@ class JoinGroupListener(
         val group = group() //所在群
         val member = member()   //加群人
         group().send("呐呐，欢迎 ${member.nickname} 加入本聊,请查看群公告")
-        group().send("你大概是第${group.currentMember-1}个加入本群的")
+        group().send("你大概是第${group.currentMember - 1}个加入本群的")
         group().send("别忘了给我点点小星星哦\nhttps://github.com/Chenyuxin221/huahua-robot")
         group().send("最后最后，有需要的话可以发送\".h|.help\"查看帮助哦")
+        if (bot.originalBot.getGroup(group().id.tryToLong())!!.botPermission != MemberPermission.MEMBER) {
+            val timeout = 5L   //超时时间
+            val message = buildMessages {
+                +At(member().id)
+                +"请你在「5分钟」内发言，不然会被请出去的哦"
+            }
+            val timer = Timer(timeout, TimeUnit.MINUTES, this, true) {
+                onStart { runBlocking { group().send(message) } }
+                onFinish {
+                    runBlocking {
+                        group().member(member.id)?.kick("没在指定时间内回复")
+                        group().send("看来他没有「5分钟」内发言呢")
+                    }
+                }
+            }
+            groupReply["${group.id}:${member.id}"] = timer
+        }
     }
 
-    /**
-     * 加群监听
-     * @receiver MiraiMemberJoinRequestEvent    加群请求事件
-     */
-//    @RobotListen(isBoot = true, desc = "入群请求监听")
-//    suspend fun MiraiMemberJoinRequestEvent.joinGroup() {
-//        var text = message  //加群请求消息
-//        val group = group() //所在群
-//        val member = user() //加群人
-//        if (message.isEmpty()){
-//            text = "啊这...他好像什么也没填"
-//        }
-//        stateInit()
-//        Sender.sendGroupMsg(
-//            group.id.toString(),
-//            "入群申请：\n申请人：${member.nickOrUsername}\n申请原因：${text}\n请管理员前往处理"
-//        )
-//        state[group().id]?.then {
-//            accept()
-//            Sender.sendGroupMsg(group.id.toString(), "已自动同意申请")
-//        }
-//    }
+    @RobotListen("回复检测", isBoot = true)
+    suspend fun GroupMessageEvent.groupJoiningReplyDetection() {
+        if (groupReply.isEmpty()) return
+        val key = "${group().id}:${author().id}"
+        groupReply[key]?.cancel()
+    }
+
 
     var a: JoinRequestEvent? = null     //入群请求
     var tampMap = mutableMapOf<String, String>()    //存入请求人QQ号
@@ -121,7 +132,7 @@ class JoinGroupListener(
             return
         }
         if (tampMap["id"] == a!!.id.toString()) {
-            withTimeoutOrNull(360000) {
+            withTimeoutOrNull(3600000) {
                 when (result) {
                     "yes" -> {
                         a!!.accept()
@@ -134,7 +145,7 @@ class JoinGroupListener(
                     }
                 }
                 this.cancel()
-            }.also {
+            }.isNull {
                 tampMap.clear()
                 logger { "超时了" }
             }
