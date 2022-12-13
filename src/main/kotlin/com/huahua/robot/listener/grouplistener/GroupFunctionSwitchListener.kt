@@ -63,7 +63,7 @@ class GroupFunctionSwitchListener(
         switch.isEmpty().then { return }    //不是指定关键词则直接返回
         switchSateService.set(group, switch, false)
         val result = switchSateService.get(group, switch)
-        result?.then {
+        result?.not()?.then {
             reply("设置成功，当前状态：${result}")
         }.isNull {
             reply("哎呀，出错啦")

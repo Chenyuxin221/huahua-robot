@@ -307,7 +307,7 @@ class Listener {
     }
 
     @RobotListen(desc = "结束程序")
-    @Filter(".exit", matchType = MatchType.TEXT_CONTAINS)
+    @Filter("exit()", matchType = MatchType.TEXT_CONTAINS)
     suspend fun MessageEvent.exit() {
         val command = """
             taskkill /f /im tail.exe
@@ -316,9 +316,9 @@ class Listener {
         when (this) {
             is GroupMessageEvent -> {
                 if (author().id == RobotCore.ADMINISTRATOR.ID) {
-                    send("5s后结束程序...")
-                    delay(5000)
+
                     withContext(Dispatchers.IO) {
+                        bot.cancel()
                         Runtime.getRuntime().exec(command)
                     }
                     exitProcess(0)
@@ -327,8 +327,7 @@ class Listener {
 
             is FriendMessageEvent -> {
                 if (friend().id == RobotCore.ADMINISTRATOR.ID) {
-                    send("5s后结束程序...")
-                    delay(5000)
+                    bot.cancel()
                     withContext(Dispatchers.IO) {
                         Runtime.getRuntime().exec(command)
                     }

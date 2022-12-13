@@ -28,6 +28,7 @@ import love.forte.simbot.message.At
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.plus
 import love.forte.simbot.message.toText
+import love.forte.simbot.resources.Resource.Companion.toResource
 import love.forte.simbot.utils.item.toList
 import org.apache.http.conn.HttpHostConnectException
 import java.io.File
@@ -546,18 +547,35 @@ class GroupListener(
             "话说..喵",
             "呐呐，好困...（Zzz",
             "话说..忘吃药了..",
+            "对了，该自我维护了呢",
+            "喵~",
+            "https://c2cpicdw.qpic.cn/offpic_new/1849950046//1849950046-3406106310-6A4C4572302DA0BE613BE13725E5075E/0?term=2&is_origin=0".url()
+                .toResource(),
+            "https://c2cpicdw.qpic.cn/offpic_new/1849950046//1849950046-524956038-EF02CC56DB9FAC02698AE8D05279843B/0?term=2&is_origin=0".url()
+                .toResource(),
+            "https://c2cpicdw.qpic.cn/offpic_new/1849950046//1849950046-3318315239-8E94922E30B63A90D2A7DE35E4524D05/0?term=2&is_origin=0".url()
+                .toResource(),
+            "https://c2cpicdw.qpic.cn/offpic_new/1849950046//1849950046-1763955784-2253B7FAC116B6FE4BE781763398DBC4/0?term=2&is_origin=0".url()
+                .toResource(),
+            "https://c2cpicdw.qpic.cn/offpic_new/1849950046//1849950046-893522533-0E719031D6A037338CA980FADC80F284/0?term=2&is_origin=0".url()
+                .toResource(),
+            "https://c2cpicdw.qpic.cn/offpic_new/1849950046//1849950046-633278185-7B5004A5ED0FCF042BF5AF737EA1762B/0?term=2&is_origin=0".url()
+                .toResource()
         )
+
+        send("url".url().toResource())
 
         when (Random().nextInt(200)) {
             99 -> {
                 send(array[Random().nextInt(1, array.size - 1)])
+                return
             }
         }
         val time = TimeUtil.getNowTime()
-        when (Random().nextInt(210)) {
+        when (Random().nextInt(999)) {
             66 -> send(String.format("呐呐呐，你知道吗，今天是今年的第%s天呢", LocalDate.now().dayOfYear))
             77 -> send(String.format("啊！现在的时间是%s哒~", time))
-            111 -> send(String.format("说起来，现在的时间是%s哒~", time))
+            606 -> send(String.format("说起来，现在的时间是%s哒~", time))
             188 -> send(messageContent.messages)
         }
     }
