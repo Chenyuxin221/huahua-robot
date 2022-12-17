@@ -56,17 +56,17 @@ class JoinGroupListener(
         group().send("别忘了给我点点小星星哦\nhttps://github.com/Chenyuxin221/huahua-robot")
         group().send("最后最后，有需要的话可以发送\".h|.help\"查看帮助哦")
         if (bot.originalBot.getGroup(group().id.tryToLong())!!.botPermission != MemberPermission.MEMBER) {
-            val timeout = 5L   //超时时间
+            val timeout = 10L   //超时时间
             val message = buildMessages {
                 +At(member().id)
-                +"请你在「5分钟」内发言，不然会被请出去的哦"
+                +"请你在「${timeout}分钟」内发言，不然会被请出去的哦"
             }
             val timer = Timer(timeout, TimeUnit.MINUTES, this, true) {
                 onStart { runBlocking { group().send(message) } }
                 onFinish {
                     runBlocking {
-                        group().member(member.id)?.kick("没在指定时间内回复")
-                        group().send("看来他没有「5分钟」内发言呢")
+                        group().member(member.id)?.kick("没在指定时间内回复，如需入群请重新申请")
+                        group().send("看来他没有在「${timeout}分钟」内发言呢")
                     }
                 }
             }

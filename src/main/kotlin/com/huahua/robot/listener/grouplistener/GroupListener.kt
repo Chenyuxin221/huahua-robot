@@ -435,11 +435,11 @@ class GroupListener(
             1 -> {
                 var atName = group().member(atList[0])?.nickOrUsername
                 atName.isNullOrEmpty().then { return }
-                var autherName = author().nickOrUsername
+                var authorName = author().nickOrUsername
                 if (atName!!.length > 6) atName = group().member(atList[0])!!.username
-                if (autherName.length > 6) autherName = author().username
+                if (authorName.length > 6) authorName = author().username
                 if (atName.length > 6) atName = atName.substring(0, 6)
-                if (autherName.length > 6) autherName = autherName.substring(0, 6)
+                if (authorName.length > 6) authorName = authorName.substring(0, 6)
                 when (msg) {
                     "嗑" -> {
                         if (atList[0] == RobotCore.ADMINISTRATOR.ID) {
@@ -448,9 +448,9 @@ class GroupListener(
                             if (adminName.length > 6) adminName = admin.username
                             if (adminName.length > 6) adminName = adminName.substring(0, 6)
                             params["g"] = group().member(RobotCore.ADMINISTRATOR.ID)!!.nickOrUsername
-                            params["s"] = autherName
+                            params["s"] = authorName
                         } else {
-                            params["g"] = autherName
+                            params["g"] = authorName
                             params["s"] = atName
                         }
                     }
@@ -514,7 +514,6 @@ class GroupListener(
     @Filter("头衔{{title}}", matchType = MatchType.REGEX_MATCHES)
     suspend fun GroupMessageEvent.receiveTitle(@FilterValue("title") title: String) {
         (botPermission() != Permission.OWNER).then { return }
-        log.error(title)
         if (title.trim().encodeToByteArray().size > 18) {
             send("哎呀，太长啦，怼不进去")
             return

@@ -342,7 +342,7 @@ class Listener {
      * @receiver GroupMessageEvent
      */
     @RobotListen(isBoot = true, desc = "陪聊服务")
-    @Filter(value = "^!>", targets = Filter.Targets(atBot = true), matchType = MatchType.REGEX_MATCHES)
+    @Filter(value = "^!>$", targets = Filter.Targets(atBot = true), matchType = MatchType.REGEX_MATCHES)
     suspend fun MessageEvent.chat() {
         val msg = messageContent.plainText.trim()   // 获取消息内容
         msg.isEmpty().then {    // 判断消息内容是否为空
