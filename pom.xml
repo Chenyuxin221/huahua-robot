@@ -17,8 +17,8 @@
     <properties>
         <java.version>17</java.version>
         <kotlin.version>1.7.21</kotlin.version>
-        <simboot.version>3.0.0-M4</simboot.version>
-        <mirai.version>3.0.0.0-beta.6</mirai.version>
+        <simboot.version>3.0.0-M2</simboot.version>
+        <mirai.version>3.0.0.0-beta.3</mirai.version>
     </properties>
 
     <repositories>
