@@ -525,7 +525,7 @@ class GroupListener(
     }
 
     @RobotListen("随机冒泡", isBoot = true)
-    suspend fun GroupMessageEvent.maopao() {
+    suspend fun GroupMessageEvent.bubbling() {
         val array: Array<Any> = arrayOf(
             "对了，今天天好蓝！",
             "对了，Hello World~",
@@ -561,9 +561,6 @@ class GroupListener(
             "https://c2cpicdw.qpic.cn/offpic_new/1849950046//1849950046-633278185-7B5004A5ED0FCF042BF5AF737EA1762B/0?term=2&is_origin=0".url()
                 .toResource()
         )
-
-        send("url".url().toResource())
-
         when (Random().nextInt(200)) {
             99 -> {
                 send(array[Random().nextInt(1, array.size - 1)])
