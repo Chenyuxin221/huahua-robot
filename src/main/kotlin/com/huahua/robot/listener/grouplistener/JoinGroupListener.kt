@@ -59,7 +59,7 @@ class JoinGroupListener(
             val timeout = 10L   //超时时间
             val message = buildMessages {
                 +At(member().id)
-                +"请你在「${timeout}分钟」内发言，不然会被请出去的哦"
+                +" 请你在「${timeout}分钟」内发言，不然会被请出去的哦"
             }
             val timer = Timer(timeout, TimeUnit.MINUTES, this, true) {
                 onStart { runBlocking { group().send(message) } }
@@ -74,19 +74,11 @@ class JoinGroupListener(
         }
     }
 
-    @RobotListen("回复检测", isBoot = true)
-    suspend fun GroupMessageEvent.groupJoiningReplyDetection() {
-        if (groupReply.isEmpty()) return
-        val key = "${group().id}:${author().id}"
-        groupReply[key]?.cancel()
-    }
-
-
     var a: JoinRequestEvent? = null     //入群请求
     var tampMap = mutableMapOf<String, String>()    //存入请求人QQ号
 
     /**
-     * 测试功能
+     * 入群请求
      * @receiver JoinRequestEvent
      */
     @RobotListen(isBoot = true, desc = "入群请求监听")
@@ -117,14 +109,14 @@ class JoinGroupListener(
     }
 
     /**
-     * 测试功能
+     * 是否同意入群申请
      * @receiver GroupMessageEvent
      */
     @RobotListen(isBoot = true, desc = "入群答复申请")
     suspend fun GroupMessageEvent.joinGroup() {
         if (a == null) return
         val message = messageContent.plainText
-        val pattern = """^(yes|no)+$"""
+        val pattern = """^(yes|no|y|n)+$"""
         val result = Regex(pattern).find(message)?.groups?.get(0)?.value ?: return
         if (!getBotManagerPermission(group(), author()) &&  //成员没有机器人管理权限
             authorPermission() < Permission.ADMINISTRATORS  //成员群权限小于管理员
@@ -134,19 +126,19 @@ class JoinGroupListener(
         if (tampMap["id"] == a!!.id.toString()) {
             withTimeoutOrNull(3600000) {
                 when (result) {
-                    "yes" -> {
+                    "yes", "y" -> {
                         a!!.accept()
                         send("「${author().nickOrUsername}」已同意入群申请")
                     }
 
-                    "no" -> {
+                    "no", "n" -> {
                         a!!.reject()
                         send("「${author().nickOrUsername}」已拒绝入群申请")
                     }
                 }
                 this.cancel()
             }.isNull {
-                tampMap.clear()
+                tampMap.clear() //清空缓存map
                 logger { "超时了" }
             }
         }

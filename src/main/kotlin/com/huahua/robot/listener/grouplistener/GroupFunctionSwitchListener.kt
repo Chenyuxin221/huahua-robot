@@ -10,6 +10,7 @@ import com.huahua.robot.utils.PermissionUtil.Companion.authorPermission
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
+import love.forte.simbot.event.EventResult
 import love.forte.simbot.event.GroupMessageEvent
 import org.springframework.stereotype.Component
 
@@ -26,25 +27,27 @@ class GroupFunctionSwitchListener(
 
     @RobotListen("开关设置", isBoot = true)
     @Filter("^(添加|增加|打开|设置){{name}}$", matchType = MatchType.REGEX_MATCHES)
-    suspend fun GroupMessageEvent.openSwitch(@FilterValue("name") name: String) {
+    suspend fun GroupMessageEvent.openSwitch(@FilterValue("name") name: String): EventResult {
 
         if (author().id.toString() != RobotCore.ADMINISTRATOR &&
             authorPermission() == Permission.MEMBER
         ) {
             // 没有操作权限则直接返回
-            return
+            return EventResult.invalid()
         }
 
         val group = group().id.toString()
         val switch = getSwitch(name)
-        switch.isEmpty().then { return }    //不是指定关键词则直接返回
+        switch.isEmpty().then { return EventResult.invalid() }    //不是指定关键词则直接返回
         switchSateService.set(group, switch, true)
         val result = switchSateService.get(group, switch)
         result?.then {
             reply("设置成功，当前状态：${result}")
+            return EventResult.truncate()
         }.isNull {
             reply("哎呀，出错啦")
         }
+        return EventResult.invalid()
     }
 
     @RobotListen("开关设置", isBoot = true)
