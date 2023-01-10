@@ -47,8 +47,7 @@ class SwitchSateServiceImpl : SwitchSateService {
 
     override fun getKeys(pattern: String): MutableSet<String> = redisTemplate.keys(pattern)
 
-    override fun getValue(key: String):
-            Boolean? = redisTemplate.opsForValue().get(key)
+    override fun getValue(key: String) = redisTemplate.opsForValue().get(key)
 
 
 }
