@@ -1,6 +1,5 @@
 package com.huahua.robot.api.controller
 
-
 import com.huahua.robot.api.entity.Photo
 import com.huahua.robot.api.mapper.PhotoMapper
 import com.huahua.robot.api.result.Result
@@ -13,8 +12,7 @@ import java.util.*
 import kotlin.reflect.jvm.jvmName
 
 /**
- * ClassName: APIController
- * @description
+ * 通用API接口
  * @author 花云端
  * @date 2022-04-27 10:27
  */

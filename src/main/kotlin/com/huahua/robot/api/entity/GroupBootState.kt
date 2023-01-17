@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName
 import lombok.AllArgsConstructor
 import lombok.NoArgsConstructor
 
+
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName("group_boot_state")

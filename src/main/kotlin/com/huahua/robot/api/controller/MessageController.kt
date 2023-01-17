@@ -10,8 +10,7 @@ import love.forte.simbot.logger.LoggerFactory
 import org.springframework.web.bind.annotation.*
 
 /**
- * ClassName: MessageController 没啥用了 数据懒得取了
- * @description
+ * 聊天消息存取接口
  * @author 花云端
  * @date 2022-04-26 21:44
  */

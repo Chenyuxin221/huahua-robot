@@ -7,7 +7,7 @@ import com.huahua.robot.api.result.ResultStatus
 import org.springframework.web.bind.annotation.*
 
 /**
- * ClassName: ManagerController
+ * 机器人管理操作接口
  * @description
  * @author 花云端
  * @date 2022-10-06 19:00

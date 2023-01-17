@@ -13,6 +13,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import love.forte.di.annotation.Beans
+import love.forte.simboot.annotation.Filter
 import love.forte.simbot.ID
 import love.forte.simbot.component.mirai.event.MiraiMemberJoinEvent
 import love.forte.simbot.component.mirai.event.MiraiMemberJoinRequestEvent
@@ -23,6 +24,7 @@ import love.forte.simbot.message.At
 import love.forte.simbot.message.buildMessages
 import love.forte.simbot.tryToLong
 import net.mamoe.mirai.contact.MemberPermission
+import org.springframework.beans.factory.annotation.Value
 import java.util.concurrent.TimeUnit
 
 /**
@@ -43,6 +45,24 @@ class JoinGroupListener(
     private val groupReply = hashMapOf<String, Timer<MiraiMemberJoinEvent>>()
 
     /**
+     * 需要屏蔽的群聊，在application.properties配置
+     */
+    @Value("\${huahua.config.join-group-shield:#{null}}")
+    private val shieldGroups = arrayListOf<String>()
+
+
+    @RobotListen("测试")
+    @Filter("入群回复状态")
+    suspend fun GroupMessageEvent.groupingReplyDetectionStatus() {
+        if (group().id.toString() in shieldGroups) {
+            reply("false")
+        } else {
+            reply("true")
+        }
+        return
+    }
+
+    /**
      * 加群监听
      * @description 加群监听
      * @receiver MiraiMemberJoinEvent   入群事件
@@ -55,14 +75,20 @@ class JoinGroupListener(
         group().send("你大概是第${group.currentMember - 1}个加入本群的")
         group().send("别忘了给我点点小星星哦\nhttps://github.com/Chenyuxin221/huahua-robot")
         group().send("最后最后，有需要的话可以发送\".h|.help\"查看帮助哦")
+        //屏蔽群聊，因为少部分群人少不太需要此功能 故在代码屏蔽
+        if (shieldGroups.isNotEmpty()) if (group().id.toString() in shieldGroups) return
+
         if (bot.originalBot.getGroup(group().id.tryToLong())!!.botPermission != MemberPermission.MEMBER) {
-            val timeout = 10L   //超时时间
+            val timeout = 30L   //超时时间
             val message = buildMessages {
                 +At(member().id)
                 +" 请你在「${timeout}分钟」内发言，不然会被请出去的哦"
             }
             val timer = Timer(timeout, TimeUnit.MINUTES, this, true) {
                 onStart { runBlocking { group().send(message) } }
+                onCancel {
+                    logger { "已终止计时器" }
+                }
                 onFinish {
                     runBlocking {
                         group().member(member.id)?.kick("没在指定时间内回复，如需入群请重新申请")
@@ -72,6 +98,12 @@ class JoinGroupListener(
             }
             groupReply["${group.id}:${member.id}"] = timer
         }
+    }
+
+    @RobotListen("回复监听", isBoot = true)
+    suspend fun GroupMessageEvent.replyToListen() {
+        val key = "${group().id}:${author().id}"
+        groupReply[key]?.cancel()
     }
 
     var a: JoinRequestEvent? = null     //入群请求

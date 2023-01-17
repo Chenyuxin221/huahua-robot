@@ -59,6 +59,18 @@
             <version>1.0.3.1</version>
         </dependency>
 
+        <!--胡图图工具包-->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.8.11</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ansj</groupId>
+            <artifactId>ansj_seg</artifactId>
+            <version>5.1.6</version>
+        </dependency>
+
         <!--汉字转拼音sdk-->
         <dependency>
             <groupId>com.belerweb</groupId>

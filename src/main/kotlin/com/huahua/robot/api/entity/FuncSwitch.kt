@@ -7,7 +7,14 @@ import com.baomidou.mybatisplus.annotation.TableName
 import lombok.AllArgsConstructor
 import lombok.NoArgsConstructor
 
-
+/**
+ * 功能开关
+ * @property id Int? 主键
+ * @property groupId String 群号
+ * @property func String    功能
+ * @property state Boolean  开关状态
+ * @constructor
+ */
 @TableName("func_switch")
 @NoArgsConstructor
 @AllArgsConstructor

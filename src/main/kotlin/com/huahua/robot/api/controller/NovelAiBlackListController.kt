@@ -11,8 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 /**
- * ClassName: NovelAiBacklListController
- * @description
+ * NovelAi黑名单接口
  * @author 花云端
  * @date 2022-11-07 14:48
  */
@@ -81,6 +80,10 @@ class NovelAiBlackListController(
 
 }
 
+/**
+ * 操作类型
+ * @author 花云端
+ */
 enum class Type {
     INSERT,
     DELETE,

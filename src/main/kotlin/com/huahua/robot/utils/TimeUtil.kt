@@ -23,10 +23,10 @@ object TimeUtil {
      * @return String   结果
      * 目前支持的时间戳单位：MILLISECONDS，SECONDS
      */
-    fun getStringTime(timeStamp: Long,timeUnit: TimeUnit = MILLISECONDS): String {
-        val date = when(timeUnit){
+    fun getStringTime(timeStamp: Long, timeUnit: TimeUnit = MILLISECONDS): String {
+        val date = when (timeUnit) {
             MILLISECONDS -> Date(timeStamp)
-            SECONDS -> Date(timeStamp*1000)
+            SECONDS -> Date(timeStamp * 1000)
             else -> null
         }
         date.isNull {
@@ -69,5 +69,21 @@ object TimeUtil {
             sb.append("${second}秒")
         }
         return sb.toString()
+    }
+
+    /**
+     * 返回时间单位文本描述
+     * @receiver TimeUnit   时间单位工具类
+     * @return String   文本
+     * @see TimeUnit
+     */
+    fun TimeUnit.name() = when (this) {
+        DAYS -> "天"
+        HOURS -> "小时"
+        MINUTES -> "分钟"
+        SECONDS -> "秒"
+        MILLISECONDS -> "毫秒"
+        MICROSECONDS -> "微秒"
+        NANOSECONDS -> "纳秒"
     }
 }

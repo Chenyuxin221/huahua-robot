@@ -19,8 +19,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 /**
- * ClassName: TimedMessage
- * @description
+ * 定时消息
  * @author 花云端
  * @date 2022-08-20 13:26
  */
