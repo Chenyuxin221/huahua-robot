@@ -148,6 +148,7 @@ class TimeTask(
             "元宵节 上元节" -> return arrayListOf("对了,祝大家元宵节/上元节快乐呀！")
             "中秋节" -> return arrayListOf("对了，祝大家中秋节快乐呀！")
             "端午节 端阳节" -> return arrayListOf("对了，祝大家端午节快乐呀！")
+            "七夕节" -> return arrayListOf("对了，七夕节快乐！！你有找到对象吗！！")
             else -> return null
         }
     }
