@@ -89,7 +89,7 @@ class TimeTask(
             val day = date.dayOfMonth()
             val hashMap = greetingsOnTheGregorianFestival(month, day) //公历节日
             var arrays = hashMap["${month}.${day}"]
-            if (arrays == null) { //没有正常节日
+            if (arrays.isNullOrEmpty()) { //没有正常节日
                 //考虑父亲节母亲节
                 //母亲节为五月的第二个星期日
                 arrays = if (month == 5 && date.weekOfMonth() == 2 && date.dayOfWeek() == 7) {
