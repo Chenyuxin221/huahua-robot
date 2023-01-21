@@ -44,8 +44,7 @@ class GroupListener(
     val switchSateService: SwitchSateService,
 ) {
 
-    //    private val lotteryPrefix: List<String> = listOf("chou", "cou", "c", "抽", "操", "艹", "草")    //抽奖前缀
-//    private val lotterySuffix: List<String> = listOf("jiang", "j", "奖", "wo", "w", "我") // 抽奖后缀
+    private val lotterySuffix: List<String> = listOf("jiang", "j", "奖", "wo", "w", "我") // 抽奖后缀
     private val log = LoggerFactory.getLogger(GroupListener::class.java)
 
     /**
@@ -79,120 +78,6 @@ class GroupListener(
         }
     }
 
-//    /**
-//     * 抽奖
-//     * @receiver GroupMessageEvent
-//     */
-//    @RobotListen(
-//        isBoot = true,
-//        desc = "抽奖服务",
-//        permission = RobotPermission.MEMBER,
-//        permissionsRequiredByTheRobot = RobotPermission.ADMINISTRATOR
-//    )
-//    suspend fun GroupMessageEvent.luckDraw() {
-//        val res = switchSateService.get(group().id.toString(), "抽奖")
-//        if (res == null) {
-//            switchSateService.set(group().id.toString(), "抽奖", false)
-//            return
-//        }
-//        if (!res) return
-//
-//        val msg = messageContent.plainText  // 获取消息内容
-//        var time = 0
-//        val url =
-//            """((http|ftp|https)://)(([a-zA-Z0-9._-]+\.[a-zA-Z]{2,6})|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,4})*(/[a-zA-Z0-9&%_./-~-]*)?""".toRegex()
-//                .find(input = msg)?.value
-//        if (url != null) return
-//        if (msg.contains(",")) {
-//            return
-//        }
-//        if (msg.contains("连抽")) {
-//            var reg = """\d+""".toRegex().find(input = msg)?.value
-//            var result = 0
-//            reg?.let { //匹配到了阿拉伯数字
-//                result = reg!!.toInt()
-//            }.isNull {    // 未匹配到阿拉伯数字，匹配汉字
-//                reg = """[零一二三四五六七八九十百壹贰叁肆伍陆柒捌玖拾佰]*""".toRegex().find(msg)?.value
-//                if (reg == null) {
-//                    println("抽奖失败，请检查语法")
-//                    return
-//                }
-//                result = chineseNumeralConversion(reg!!)
-//            }
-//            for (i in result downTo 1) {
-//                val lucky = lucky(80)
-//                time += lucky.time * lucky.multiple
-//            }
-//            if (time > 43200) {
-//                time = 43200
-//            }
-//            val timeMillisecond = TimeUnit.MINUTES.toMillis(time.toLong())
-//            val format = TimeUtil.millisecondFormat(timeMillisecond)
-//            if (botCompareToAuthor()) {
-//                val r = author().mute((time).minutes)
-//                r.then {
-//                    send(At(author().id) + " 恭喜你抽到了${format}的禁言套餐".toText())
-//                }
-//            } else if (botPermission() == Permission.ADMINISTRATORS &&
-//                authorPermission() == Permission.OWNER ||
-//                authorPermission() == Permission.ADMINISTRATORS
-//            ) {
-//                send(At(author().id) + " 你抽个屁的奖".toText())  // 发送消息
-//            } else {
-//                send("哎呀，无法奖励你~权限不够呢")  // 发送消息
-//            }
-//            return
-//        }
-//        val lucky = lucky(80)   // 获取抽奖结果
-//        var num = 0 // 初始化触发次数
-//        for (it in lotteryPrefix) { // 遍历抽奖前缀
-//            if (msg.contains(it) || msg.lowercase().contains(it)) { // 判断消息内容是否包含抽奖前缀
-//                num++   // 触发次数加一
-//                break   // 跳出循环
-//            }
-//        }   // 循环结束
-//        for (it in lotterySuffix) { // 遍历抽奖后缀
-//            if (msg.contains(it) || msg.lowercase().contains(it)) { // 判断消息内容是否包含抽奖后缀
-//                num++   // 触发次数加一
-//                break   // 跳出循环
-//            }
-//        }
-//
-//        val list = ChineseToPinyinUtils.toPinYin(msg, "|")?.split("|")
-//        var pinyin = false
-//        if (list != null) {
-//            if ("cou" in list || "chou" in list) {
-//                if ("jiang" in list) {
-//                    pinyin = true
-//                }
-//            }
-//        }
-//        if ((msg == "抽奖" || "cj" == msg.lowercase() || msg == "奖励我") || num == 2 || pinyin)  // 判断消息内容是否为抽奖
-//            if (botCompareToAuthor()) {
-//                author().mute((lucky.time * lucky.multiple).minutes)    // 禁言指定时间
-//                val message: Message =
-//                    At(author().id) + " 恭喜你抽到了${lucky.time}分钟".toText() + if (lucky.multiple == 1) "".toText() else ("，真是太棒了，你抽中的奖励翻了${lucky.multiple}倍，" + "变成了${lucky.time * lucky.multiple}分钟").toText() // 拼接字符串
-//                send(message)   // 发送消息
-//            } else if (botPermission() == Permission.ADMINISTRATORS &&
-//                authorPermission() == Permission.OWNER ||
-//                authorPermission() == Permission.ADMINISTRATORS
-//            ) { // 没有禁言权限但是bot有管理员权限
-//                messageContent.messages.forEach {
-//                    if (it is At) {
-//                        if (botCompareToMember(group().member(it.target)!!)) {
-//                            group().member(it.target)!!.mute((lucky.time * lucky.multiple).minutes)
-//                            send(At(it.target) + " 恭喜你，${author().nickOrUsername}帮你抽中了${lucky.time * lucky.multiple}分钟".toText())
-//                        } else {
-//                            send(At(author().id) + " 哎呀，无法帮${group().member(it.target)!!.nickOrUsername}抽奖，权限不够呢".toText())
-//                        }
-//                        return
-//                    }
-//                }
-//                send(At(author().id) + " 你抽个屁的奖".toText())  // 发送消息
-//            } else {  //  没有禁言权限也没有管理员权限 也就是bot为普通成员
-//                send("哎呀，无法奖励你~权限不够呢")  // 发送消息
-//            }
-//    }
 
     @RobotListen("单抽功能", isBoot = true)
     suspend fun GroupMessageEvent.lucky() {
@@ -648,6 +533,8 @@ class GroupListener(
             "话说..忘吃药了..",
             "对了，该自我维护了呢",
             "喵~",
+            "还有！新年快乐！",
+            "对了，happy new year~"
         )
         val imgArray = arrayOf(
             "https://c2cpicdw.qpic.cn/offpic_new/1849950046//1849950046-3406106310-6A4C4572302DA0BE613BE13725E5075E/0?term=2&is_origin=0",
