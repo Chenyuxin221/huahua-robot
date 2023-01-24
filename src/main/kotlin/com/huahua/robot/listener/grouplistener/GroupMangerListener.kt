@@ -352,11 +352,14 @@ class GroupMangerListener {
     }
 }
 
-fun getBotManagerPermission(group: Group, user: Member): Boolean = getBotManagerPermission(group.id, user.id)
-fun getBotManagerPermission(group: ID, user: ID): Boolean =
+suspend fun getBotManagerPermission(group: Group, user: Member): Boolean = getBotManagerPermission(group.id, user.id)
+suspend fun getBotManagerPermission(group: ID, user: ID): Boolean =
     getBotManagerPermission(group.toString(), user.toString())
 
-fun getBotManagerPermission(group: String, user: String): Boolean {
+suspend fun getBotManagerPermission(group: String, user: String): Boolean {
+    if (RobotCore.getBot().bot.group(group.ID)!!.id.toString() == RobotCore.ADMINISTRATOR) {
+        return true
+    } // 优先判断是否为机器人主人
     val url = "http://127.0.0.1:8080/manager/query?groupId=${group}&userId=$user"
     val body = HttpUtil.get(url).response
     try {
