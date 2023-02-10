@@ -20,7 +20,7 @@ import java.util.stream.Collectors
  * @date 2022-05-18 15:57
  */
 class Cookie {
-    private val uin: String = RobotCore.ADMINISTRATOR
+    private val uin: String = RobotCore.ADMINISTRATOR.toString()
     private var isWaitScan = false
     private val check =
         "https://ssl.ptlogin2.qq.com/check?regmaster=&pt_tea=2&pt_vcode=1&uin=%s&appid=716027609&js_ver=21122814&js_type=1&login_sig=u1cFxLxCIZyhQiuufGpUqedhK9g9VlQWIXW1ybpCg-G0-q9wd0mdzw3R9vNHFz2S&u1=https://graph.qq.com/oauth2.0/login_jump&r=0.004892586794276843&pt_uistyle=40"
@@ -36,7 +36,7 @@ class Cookie {
         val responseEntity: ResponseEntity = HttpUtil.get(String.format(check, uin))
         cookie.putAll(responseEntity.cookies)
         val path = loginQrCode
-        Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR, path.toFile().getImageMessage())
+        Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR.toString(), path.toFile().getImageMessage())
         isWaitScan = true
         try {
             while (true) {
@@ -53,7 +53,7 @@ class Cookie {
                     return true
                 } else if (response.contains("ptuiCB('65'")) {
                     val imagePath = loginQrCode
-                    Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR, imagePath.toFile().getImageMessage())
+                    Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR.toString(), imagePath.toFile().getImageMessage())
                 }
             }
         } catch (e: InterruptedException) {

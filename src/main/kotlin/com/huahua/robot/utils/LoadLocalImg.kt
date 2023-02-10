@@ -1,6 +1,7 @@
 package com.huahua.robot.utils
 
-import com.huahua.robot.exception.ScanFilesException
+import com.huahua.robot.core.common.logger
+import org.springframework.boot.logging.LogLevel
 import java.io.File
 
 /**
@@ -31,7 +32,7 @@ class LoadLocalImg {
      * @param path String
      * @return ArrayList<String> 目录内所有文件路径
      */
-    private fun scanFile(path: String): Unit {
+    private fun scanFile(path: String) {
         val directory = File(path)
 
         /**
@@ -42,7 +43,9 @@ class LoadLocalImg {
          * 如果当前不是目录则抛出异常
          */
         if (!directory.isDirectory) {
-            throw ScanFilesException("$path input path is not a Directory, please input the right path of the Directory")
+            logger(LogLevel.ERROR) { "$path input path is not a Directory, please input the right path of the Directory" }
+            return
+//            throw ScanFilesException("$path input path is not a Directory, please input the right path of the Directory")
         }
         if (directory.isDirectory) {
             val fileList: Array<out File>? = directory.listFiles()

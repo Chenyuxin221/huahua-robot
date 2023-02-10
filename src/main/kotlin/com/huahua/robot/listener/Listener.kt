@@ -31,7 +31,6 @@ import love.forte.simbot.message.*
 import love.forte.simbot.resources.FileResource
 import love.forte.simbot.resources.Resource.Companion.toResource
 import love.forte.simbot.resources.URLResource
-import love.forte.simbot.tryToLong
 import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -82,7 +81,7 @@ class Listener {
             }
         }
         val flag: MessageReceipt?
-        val message = getForwardImageMessages(imageList, RobotCore.BOTID.tryToLong())
+        val message = getForwardImageMessages(imageList, RobotCore.BOTID.toLong())
         flag = send(message!!) // 发送消息并获取标记
         if (this is GroupMessageEvent) { //判断是否为群聊环境
             botCompareToAuthor().then { //判断bot是否有权限

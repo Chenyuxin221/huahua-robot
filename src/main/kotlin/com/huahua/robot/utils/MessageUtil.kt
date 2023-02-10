@@ -9,20 +9,19 @@ import com.huahua.robot.utils.FileUtil.url
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
-import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.component.mirai.MiraiComponent
 import love.forte.simbot.component.mirai.bot.MiraiBot
 import love.forte.simbot.component.mirai.event.MiraiGroupMessageEvent
 import love.forte.simbot.component.mirai.message.MiraiMusicShare
 import love.forte.simbot.component.mirai.message.asSimbotMessage
 import love.forte.simbot.event.MessageEvent
+import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.message.At
 import love.forte.simbot.message.Image.Key.toImage
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.Messages
 import love.forte.simbot.message.ReceivedMessageContent
 import love.forte.simbot.resources.Resource.Companion.toResource
-import love.forte.simbot.tryToLong
 import net.mamoe.mirai.Mirai
 import net.mamoe.mirai.contact.Contact.Companion.uploadImage
 import net.mamoe.mirai.message.data.ForwardMessage
@@ -310,7 +309,7 @@ suspend fun MessageEvent.getForwardImageMessages(list: ArrayList<String>?, userI
     forward = buildForwardMessage((this as MiraiGroupMessageEvent).originalEvent.group) {
         list.forEach {
             val img = Image(miraiBot.originalBot.asFriend.uploadImage(File(it)).imageId)
-                add(RobotCore.BOTID.tryToLong(), Mirai.queryProfile(bot.originalBot,userId).nickname, img)
+            add(RobotCore.BOTID.toLong(), Mirai.queryProfile(bot.originalBot, userId).nickname, img)
             }
         }
     return forward.asSimbotMessage()

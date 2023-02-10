@@ -6,8 +6,7 @@ import com.baidubce.http.HttpMethodName
 import com.baidubce.model.ApiExplorerRequest
 import com.huahua.robot.api.entity.Porn
 import com.huahua.robot.api.mapper.PornMapper
-import com.huahua.robot.config.Baidubce
-import com.huahua.robot.config.Config
+import com.huahua.robot.config.RobotConfig
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.isNull
 import com.huahua.robot.core.common.send
@@ -16,8 +15,8 @@ import com.huahua.robot.utils.FileUtil.getTempImage
 import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
 import love.forte.simbot.ID
-import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.event.GroupMessageEvent
+import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.message.Image
 import org.springframework.stereotype.Component
 import org.springframework.util.DigestUtils
@@ -36,21 +35,25 @@ import kotlin.time.Duration.Companion.minutes
  */
 @Component
 class GroupImageExamineListener(
-    val mapper: PornMapper,
+    private val mapper: PornMapper,
+    private val robotConfig: RobotConfig,
 ) {
     private val log = LoggerFactory.getLogger(GroupImageExamineListener::class)
 
     @RobotListen(isBoot = true, desc = "图像审核")
     suspend fun GroupMessageEvent.imageTExamine() {
-        Config.baidubce.isNull {    //判断是否有配置项
+        robotConfig.baidubce.isNull {    //判断是否有配置项
             return
         }
-        val list = Config.exclude_groups
-        val id = Baidubce.client_id
-        val secret = Baidubce.client_secret
+        val list = robotConfig.excludeGroups
+        val id = robotConfig.baidubce?.clientId
+        val secret = robotConfig.baidubce?.clientSecret
+        if (id == null || secret == null) {
+            return
+        }
         messageContent.messages.forEach {
             if (it is Image) {
-                list.isNotEmpty().then {
+                list?.isNotEmpty()?.then {
                     list.forEach { str ->
                         if (group().id == str.ID) {
                             log.info("已过滤群--->${group().name}")

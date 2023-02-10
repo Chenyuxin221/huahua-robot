@@ -1,14 +1,14 @@
 package com.huahua.robot.core.common
 
 
-import com.huahua.robot.config.Account
-import com.huahua.robot.config.Config
+import com.huahua.robot.config.AccountConfig
+import com.huahua.robot.config.RobotConfig
 import com.huahua.robot.core.mapper.GroupBootStateMapper
+import com.huahua.robot.utils.SpringContextUtil
+import love.forte.simboot.spring.autoconfigure.EnableSimbot
 import love.forte.simbot.ID
 import love.forte.simbot.bot.Bot
-import love.forte.simbot.bot.OriginBotManager
 import love.forte.simbot.event.EventListenerManager
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
@@ -22,33 +22,43 @@ import javax.annotation.PostConstruct
 @Suppress("unused")
 @Order(1)
 @Component
-class RobotCore (
-    private val listenerManager: EventListenerManager
-        ){
-
-    @Autowired
-    lateinit var mapper: GroupBootStateMapper
-
+@EnableSimbot
+class RobotCore(
+    private val listenerManager: EventListenerManager,
+    private val groupBootStateMapper: GroupBootStateMapper,
+    private val applicationContext: ApplicationContext,
+    private val accountConfig: AccountConfig,
+    private val robotConfig: RobotConfig,
+) {
     @PostConstruct
     fun init() {
         setApplicationContext()
         initGroupBootMap()
+        initCode()
+    }
+
+    private fun initCode() {
+        ADMINISTRATOR = accountConfig.adminId
+        BOTID = accountConfig.botId
+        BOOTCOMMANDPATH = robotConfig.bootCommand
     }
 
     @Synchronized
     private fun setApplicationContext() {
         robotCore = this
+        RobotCore.applicationContext = applicationContext
     }
 
     private fun initGroupBootMap() {
-        mapper.selectList(null)?.forEach {
+        groupBootStateMapper.selectList(null)?.forEach {
             BOOT_MAP[it.groupCode] = it.state
         }
 
     }
 
+
     companion object {
-        var applicationContext: ApplicationContext? = null
+        lateinit var applicationContext: ApplicationContext
 
         /**
          * 项目名
@@ -76,22 +86,25 @@ class RobotCore (
          */
         var THREAD_POOL: ExecutorService? = null
 
+        var accountConfig: AccountConfig? = null
+
+        var robotConfig: RobotConfig? = null
+
         /**
          * 机器人管理员
          */
-        var ADMINISTRATOR: String = Account.admin
-
-        var AiBLACKLIST = mutableListOf<String>()
+        var ADMINISTRATOR = -1
 
         /**
          * 主机器人Id
          */
-        var BOTID: ID = Account.bot.ID
+        var BOTID = -1
+        var AiBLACKLIST = mutableListOf<String>()
 
         /**
          * 运行脚本路径
          */
-        var BOOTCOMMANDPATH: String = Config.boot_command
+        var BOOTCOMMANDPATH: String = ""
 
         /**
          * 用户Skey
@@ -126,6 +139,8 @@ class RobotCore (
 
         var robotCore: RobotCore? = null
 
+        private var bot: Bot? = null
+
         init {
             val pythonEnvPath = "venv"
             PYTHON_PATH = if (File(PROJECT_PATH + pythonEnvPath).exists()) {
@@ -142,12 +157,16 @@ class RobotCore (
                 ThreadFactory { Thread() })
         }
 
-        fun isBotAdministrator(accountCode: String): Boolean {
-            return ADMINISTRATOR.contains(accountCode)
+        fun isBotAdministrator(accountCode: Int): Boolean {
+            return ADMINISTRATOR == accountCode
+        }
+
+        fun setBot(bot: Bot) {
+            this.bot = bot
         }
 
         fun getBot(): Bot {
-            return OriginBotManager.getAnyBot()
+            return bot!!
         }
     }
 }
@@ -157,6 +176,7 @@ inline fun <T> T.isNull(block: () -> Unit): T {
     return this
 }
 
+fun <T> botBean(clazz: Class<T>) = SpringContextUtil().getBean(clazz)
 inline fun Boolean.then(block: () -> Unit) = this.also { if (this) block() }
 inline operator fun Boolean.invoke(block: () -> Unit) = this.then(block)
 inline fun Boolean?.onElse(block: () -> Unit): Boolean = this.let {

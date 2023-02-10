@@ -2,6 +2,7 @@ package com.huahua.robot.utils
 
 import com.huahua.robot.core.common.RobotCore
 import kotlinx.coroutines.runBlocking
+import love.forte.simbot.ID
 import love.forte.simbot.definition.GroupMember
 import love.forte.simbot.definition.Member
 import love.forte.simbot.event.GroupMessageEvent
@@ -56,7 +57,7 @@ class PermissionUtil {
         fun GroupMessageEvent.botPermission() =
             runBlocking {
                 PermissionUtil().getPermissionCode(
-                    this@botPermission.group().member(RobotCore.BOTID)!!  //获取群Bot的权限
+                    this@botPermission.group().member(RobotCore.BOTID.ID)!!  //获取群Bot的权限
                 )
             }
 

@@ -28,7 +28,7 @@ class GroupFunctionSwitchListener(
     @Filter("^(添加|增加|打开|设置){{name}}$", matchType = MatchType.REGEX_MATCHES)
     suspend fun GroupMessageEvent.openSwitch(@FilterValue("name") name: String) {
 
-        if (author().id.toString() != RobotCore.ADMINISTRATOR &&
+        if (author().id.toString() != RobotCore.ADMINISTRATOR.toString() &&
             authorPermission() == Permission.MEMBER
         ) {
             // 没有操作权限则直接返回
@@ -52,7 +52,7 @@ class GroupFunctionSwitchListener(
     @Filter("^(取消|关闭){{name}}$", matchType = MatchType.REGEX_MATCHES)
     suspend fun GroupMessageEvent.closeSwitch(@FilterValue("name") name: String) {
 
-        if (author().id.toString() != RobotCore.ADMINISTRATOR &&
+        if (author().id.toString() != RobotCore.ADMINISTRATOR.toString() &&
             authorPermission() == Permission.MEMBER
         ) {
             // 没有操作权限则直接返回

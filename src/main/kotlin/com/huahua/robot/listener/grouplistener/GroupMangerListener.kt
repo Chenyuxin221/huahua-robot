@@ -357,7 +357,7 @@ suspend fun getBotManagerPermission(group: ID, user: ID): Boolean =
     getBotManagerPermission(group.toString(), user.toString())
 
 suspend fun getBotManagerPermission(group: String, user: String): Boolean {
-    if (RobotCore.getBot().bot.group(group.ID)!!.id.toString() == RobotCore.ADMINISTRATOR) {
+    if (RobotCore.getBot().bot.group(group.ID)!!.id.toString() == RobotCore.ADMINISTRATOR.toString()) {
         return true
     } // 优先判断是否为机器人主人
     val url = "http://127.0.0.1:8080/manager/query?groupId=${group}&userId=$user"

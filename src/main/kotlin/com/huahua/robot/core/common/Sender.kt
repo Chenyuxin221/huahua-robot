@@ -8,7 +8,6 @@ import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Listener
 import love.forte.simbot.ID
 import love.forte.simbot.action.SendSupport
-import love.forte.simbot.action.sendIfSupport
 import love.forte.simbot.component.mirai.SimbotMiraiMessageReceipt
 import love.forte.simbot.component.mirai.event.MiraiMessagePostSendEvent
 import love.forte.simbot.definition.Contact
@@ -16,7 +15,6 @@ import love.forte.simbot.definition.Friend
 import love.forte.simbot.definition.Group
 import love.forte.simbot.event.*
 import love.forte.simbot.message.*
-import org.springframework.stereotype.Component
 import java.util.concurrent.TimeUnit
 
 
@@ -69,10 +67,7 @@ class Sender {
             timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
             eventMatcher: ContinuousSessionEventMatcher<MessageEvent> = ContinuousSessionEventMatcher,
         ): MessageContent? {
-            val messageReceipt = when (event) {
-                is SendSupport -> event.send(buildMessage(messages, separator))
-                else -> event.source().sendIfSupport(buildMessage(messages, separator))
-            }
+            val messageReceipt = event.send(buildMessage(messages, separator))
             val coroutineScope = CoroutineScope(Dispatchers.Default)
             coroutineScope.launch {
                 delay(timeUnit.toMillis(timeout))
@@ -167,7 +162,6 @@ class Sender {
             if (messages.toString().isEmpty()) return null
             return when (event) {
                 is SendSupport -> event.send(buildMessage(messages, separator))
-                is MessageEvent -> event.source().sendIfSupport(buildMessage(messages, separator))
                 else -> null
             }
         }
@@ -300,7 +294,7 @@ class Sender {
          * @return MessageReceipt?  发送结果
          */
         fun sendAdminMsg(messages: Any) = runBlocking {
-            return@runBlocking sendPrivateMsg(RobotCore.ADMINISTRATOR, messages)
+            return@runBlocking sendPrivateMsg(RobotCore.ADMINISTRATOR.toString(), messages)
         }
     }
 }

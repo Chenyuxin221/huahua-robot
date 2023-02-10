@@ -59,7 +59,7 @@ class ListenerAspect {
                 // 判断是否有权限
                 if (
                     annotation.permission != RobotPermission.MEMBER &&
-                    annotation.permission > role && !RobotCore.isBotAdministrator(author.id.toString())
+                    annotation.permission > role && !RobotCore.isBotAdministrator(author.id.toString().toInt())
                 ) {
                     if (annotation.noPermissionTip.isNotBlank()) {
                         Sender.sendGroupMsg(group, annotation.noPermissionTip)

@@ -21,7 +21,9 @@ class test(
 
     @RobotListen("启动事件")
     suspend fun BotStartedEvent.start() {
-        bot.contact(RobotCore.ADMINISTRATOR.ID)?.send("${getSentence()}\n---${TimeUtil.getNowTime()}")
+        println("${RobotCore.ADMINISTRATOR}++++++++++++")
+        RobotCore.setBot(bot)
+        RobotCore.getBot().contact(RobotCore.ADMINISTRATOR.ID)?.send("${getSentence()}\n---${TimeUtil.getNowTime()}")
         initRedis() // 将数据库中的数据缓存进redis
     }
 
