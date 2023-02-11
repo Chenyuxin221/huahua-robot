@@ -176,13 +176,17 @@ inline fun <T> T.isNull(block: () -> Unit): T {
     return this
 }
 
-fun <T> botBean(clazz: Class<T>) = SpringContextUtil().getBean(clazz)
+/**
+ * 获取容器中的bean
+ * @param clazz Class<T>
+ * @return T
+ */
+inline fun <reified T> getBean() = SpringContextUtil().getBean(T::class.java)
 inline fun Boolean.then(block: () -> Unit) = this.also { if (this) block() }
 inline operator fun Boolean.invoke(block: () -> Unit) = this.then(block)
 inline fun Boolean?.onElse(block: () -> Unit): Boolean = this.let {
     it?.not()?.then(block).isNull { block() }
     it ?: false
 }
-
 inline operator fun Boolean?.minus(block: () -> Unit) = this.onElse(block)
 
