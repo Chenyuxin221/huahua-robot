@@ -14,8 +14,9 @@ import org.springframework.stereotype.Component
 @ConfigurationProperties(prefix = "huahua.config")
 class RobotConfig {
     var bootCommand = ""
-    var morningPaperGroups: ArrayList<Int>? = null
-    var excludeGroups: ArrayList<Int>? = null
+    var morningPaperGroups: ArrayList<String>? = null
+    var excludeGroups: ArrayList<String>? = null
+    var joinGroupShield: ArrayList<String>? = null
     var baidubce: Baidubce? = null
     var gpt: Gpt? = null
 
@@ -39,6 +40,7 @@ class RobotConfig {
         return StringBuilder()
             .append("bootCommand=${bootCommand};")
             .append("morningPaperGroups=${morningPaperGroups};")
+            .append("joinGroupShield=${joinGroupShield};")
             .append("excludeGroups=${excludeGroups};")
             .append("baidubce=${baidubce.toString()};")
             .append("Gpt=${gpt.toString()}")

@@ -3,6 +3,7 @@ package com.huahua.robot.listener.scheduledTasks
 import cn.hutool.core.date.ChineseDate
 import cn.hutool.core.date.DateUtil
 import com.alibaba.fastjson2.JSON
+import com.huahua.robot.config.RobotConfig
 import com.huahua.robot.core.common.*
 import com.huahua.robot.service.SwitchSateService
 import com.huahua.robot.utils.FileUtil.getTempImage
@@ -11,7 +12,6 @@ import com.huahua.robot.utils.HttpUtil
 import kotlinx.coroutines.runBlocking
 import love.forte.simbot.message.Image.Key.toImage
 import love.forte.simbot.resources.Resource.Companion.toResource
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.logging.LogLevel
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -27,14 +27,13 @@ import java.util.*
 @Component
 class TimeTask(
     val switchSateService: SwitchSateService,
+    val robotConfig: RobotConfig,
 ) {
 
 
-    @Value("\${huahua.config.morningPaper.groups:#{null}}")
-    val groups: List<String>? = arrayListOf()
-
     @Scheduled(cron = "0 0 8 * * ?")
     fun dailyMorningPaper() {
+        val groups = robotConfig.morningPaperGroups
         groups.isNullOrEmpty().then { return }
         val url = "https://api.03c3.cn/zb/api.php"
         val body = JSON.parseObject(HttpUtil.get(url).response)
@@ -42,7 +41,7 @@ class TimeTask(
         (body.getIntValue("code") != 200).then { return }
         "${data}.png".getTempImage(body.getString("imageUrl").url())?.also {
             groups!!.forEach { str ->
-                Sender.sendGroupMsg(str, it.toResource().toImage())
+                Sender.sendGroupMsg(str.toString(), it.toResource().toImage())
             }
         }.isNull { logger(LogLevel.ERROR) { "哎呀，接口失效了" } }!!.delete()
     }

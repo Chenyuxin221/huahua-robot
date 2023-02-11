@@ -93,12 +93,12 @@ class RobotCore(
         /**
          * 机器人管理员
          */
-        var ADMINISTRATOR = -1
+        lateinit var ADMINISTRATOR: String
 
         /**
          * 主机器人Id
          */
-        var BOTID = -1
+        lateinit var BOTID: String
         var AiBLACKLIST = mutableListOf<String>()
 
         /**
@@ -158,7 +158,7 @@ class RobotCore(
         }
 
         fun isBotAdministrator(accountCode: Int): Boolean {
-            return ADMINISTRATOR == accountCode
+            return ADMINISTRATOR == accountCode.toString()
         }
 
         fun setBot(bot: Bot) {

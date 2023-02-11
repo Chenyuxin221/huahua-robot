@@ -1,5 +1,6 @@
 package com.huahua.robot.listener.grouplistener
 
+import com.huahua.robot.config.RobotConfig
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.Sender
 import com.huahua.robot.core.common.isNull
@@ -24,7 +25,6 @@ import love.forte.simbot.message.At
 import love.forte.simbot.message.buildMessages
 import love.forte.simbot.tryToLong
 import net.mamoe.mirai.contact.MemberPermission
-import org.springframework.beans.factory.annotation.Value
 import java.util.concurrent.TimeUnit
 
 /**
@@ -35,7 +35,8 @@ import java.util.concurrent.TimeUnit
  */
 @Beans
 class JoinGroupListener(
-    val switchSateService: SwitchSateService,
+    private val switchSateService: SwitchSateService,
+    private val robotConfig: RobotConfig,
 ) {
 
     /**
@@ -43,21 +44,19 @@ class JoinGroupListener(
      */
     private var state = hashMapOf<ID, Boolean>()
     private val groupReply = hashMapOf<String, Timer<MiraiMemberJoinEvent>>()
-
-    /**
-     * 需要屏蔽的群聊，在application.properties配置
-     */
-    @Value("\${huahua.config.join-group-shield:#{null}}")
-    private val shieldGroups = arrayListOf<String>()
-
+    private val shieldGroups = robotConfig.joinGroupShield
 
     @RobotListen("测试")
     @Filter("入群回复状态")
     suspend fun GroupMessageEvent.groupingReplyDetectionStatus() {
-        if (group().id.toString() in shieldGroups) {
-            reply("false")
+        if (shieldGroups != null) {
+            if (group().id.toString() in shieldGroups) {
+                reply("false")
+            } else {
+                reply("true")
+            }
         } else {
-            reply("true")
+            reply("未配置")
         }
         return
     }
@@ -75,8 +74,9 @@ class JoinGroupListener(
         group().send("你大概是第${group.currentMember - 1}个加入本群的")
         group().send("别忘了给我点点小星星哦\nhttps://github.com/Chenyuxin221/huahua-robot")
         group().send("最后最后，有需要的话可以发送\".h|.help\"查看帮助哦")
+
         //屏蔽群聊，因为少部分群人少不太需要此功能 故在代码屏蔽
-        if (shieldGroups.isNotEmpty()) if (group().id.toString() in shieldGroups) return
+        if (!shieldGroups.isNullOrEmpty()) if (group().id.toString() in shieldGroups) return
 
         if (bot.originalBot.getGroup(group().id.tryToLong())!!.botPermission != MemberPermission.MEMBER) {
             val timeout = 30L   //超时时间

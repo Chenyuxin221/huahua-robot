@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component
 @Component
 @ConfigurationProperties(prefix = "huahua.account")
 class AccountConfig {
-    var adminId = -1
-    var botId = -1
+    lateinit var adminId: String
+    lateinit var botId: String
     override fun toString(): String {
         return "adminID=${adminId};botId=${botId}"
     }
