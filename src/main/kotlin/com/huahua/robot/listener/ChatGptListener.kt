@@ -25,6 +25,11 @@ import org.springframework.data.redis.serializer.RedisSerializer
 import org.springframework.stereotype.Component
 import javax.annotation.Resource
 
+
+/**
+ * 或许已失效
+ */
+
 /**
  * ClassName: ChatGptListener
  * @description
