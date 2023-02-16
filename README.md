@@ -95,13 +95,13 @@ spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 spring.datasource.url=你的数据库地址
 spring.datasource.username=用户名
 spring.datasource.password=用户密码
-huahua.account.admin.id=管理员QQ号
-huahua.account.bot.id=BotQQ号
+huahua.account.admin_id=管理员QQ号
+huahua.account.bot_id=BotQQ号
 spring.redis.host=127.0.0.1
 spring.redis.port=6379
 #可选
 huahua.config.boot-command=“启动文件路径”
-huahua.config.morningPaper.groups=123,456,789 #需要每日早报的群
+huahua.config.morningPaper_groups=123,456,789 #需要每日早报的群
 #可选(涩图检测)
 huahua.config.exclude_Groups=123,456 #过滤掉话多的群，钱多可以不用
 huahua.config.baidubce.client_id=百度ai Api Key

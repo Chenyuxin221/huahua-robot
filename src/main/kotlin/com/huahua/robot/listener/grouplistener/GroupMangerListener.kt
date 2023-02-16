@@ -185,11 +185,11 @@ class GroupMangerListener {
     @Filter("撤回", matchType = MatchType.TEXT_STARTS_WITH)
     suspend fun GroupMessageEvent.messageRecall() {
         val messages = messageContent.messages
-        val originMiraiQuoteReply = messages[MiraiQuoteReply].firstOrNull()?.originalMiraiMessage
-            ?: messages.firstNotNullOf { element ->
-                (element as? SimbotOriginalMiraiMessage)?.originalMiraiMessage as? QuoteReply
-            }
         try {
+            val originMiraiQuoteReply = messages[MiraiQuoteReply].firstOrNull()?.originalMiraiMessage
+                ?: messages.firstNotNullOf { element ->
+                    (element as? SimbotOriginalMiraiMessage)?.originalMiraiMessage as? QuoteReply
+                }
             if (!getBotManagerPermission(group(), author()) &&  //成员没有机器人管理权限
                 authorPermission() < Permission.ADMINISTRATORS && //成员群权限小于管理员
                 originMiraiQuoteReply.source.fromId.ID != author().id  //成员不是撤回自己的消息

@@ -3,6 +3,7 @@ package com.huahua.robot.listener.scheduledTasks
 import cn.hutool.core.date.ChineseDate
 import cn.hutool.core.date.DateUtil
 import com.alibaba.fastjson2.JSON
+import com.alibaba.fastjson2.JSONObject
 import com.huahua.robot.config.RobotConfig
 import com.huahua.robot.core.common.*
 import com.huahua.robot.service.SwitchSateService
@@ -36,12 +37,21 @@ class TimeTask(
         val groups = robotConfig.morningPaperGroups
         groups.isNullOrEmpty().then { return }
         val url = "https://api.03c3.cn/zb/api.php"
-        val body = JSON.parseObject(HttpUtil.get(url).response)
+        var body: JSONObject? = null
+        try {
+            body = JSON.parseObject(HttpUtil.get(url).response)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        if (body == null) {
+            logger { "哎呀，接口失效啦！" }
+            return
+        }
         val data = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
         (body.getIntValue("code") != 200).then { return }
         "${data}.png".getTempImage(body.getString("imageUrl").url())?.also {
             groups!!.forEach { str ->
-                Sender.sendGroupMsg(str.toString(), it.toResource().toImage())
+                Sender.sendGroupMsg(str, it.toResource().toImage())
             }
         }.isNull { logger(LogLevel.ERROR) { "哎呀，接口失效了" } }!!.delete()
     }
