@@ -27,7 +27,7 @@ import javax.annotation.Resource
 
 
 /**
- * 或许已失效
+ * 或许已失效.
  */
 
 /**
