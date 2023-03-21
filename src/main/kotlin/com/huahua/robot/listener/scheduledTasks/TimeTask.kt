@@ -64,8 +64,7 @@ class TimeTask(
     fun updateMysql() {
         val keys = switchSateService.getKeys("*")
         keys.forEach {
-            val value = switchSateService.getValue(it).toString()
-            value.isEmpty().then { return }
+            val value = switchSateService.getValue(it)
             val temp = it.split(":")
             val groupId = temp[0]
             val func = temp[1]
