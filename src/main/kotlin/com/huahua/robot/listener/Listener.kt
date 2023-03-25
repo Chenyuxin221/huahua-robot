@@ -607,7 +607,7 @@ class Listener {
     suspend fun MiraiNudgeEvent.nudge() {
         if (originalEvent.target.id != RobotCore.BOTID.toLong()) return
         if (nudgeCount >= 20) {
-            bot.launch { delay(300000) }
+            delay(300000)
             nudgeCount = 0
             return
         }
