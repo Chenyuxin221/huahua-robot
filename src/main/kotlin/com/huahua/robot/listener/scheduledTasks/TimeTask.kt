@@ -62,8 +62,8 @@ class TimeTask(
      */
     @Scheduled(cron = "0 0 0 * * ?")
     fun updateMysql() {
-        val keys = switchSateService.getKeys("*")
-        keys.forEach {
+        val values = switchSateService.getKeys("*")
+        values.forEach {
             val value = switchSateService.getValue(it)
             val temp = it.split(":")
             val groupId = temp[0]

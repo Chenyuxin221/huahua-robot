@@ -14,14 +14,12 @@ import com.huahua.robot.utils.FileUtil.getTempMusic
 import com.huahua.robot.utils.FileUtil.url
 import com.huahua.robot.utils.MessageUtil.Companion.getImageMessage
 import com.huahua.robot.utils.PermissionUtil.Companion.botCompareToAuthor
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
 import love.forte.simbot.ID
+import love.forte.simbot.component.mirai.event.MiraiNudgeEvent
 import love.forte.simbot.component.mirai.message.MiraiSendOnlyAudio
 import love.forte.simbot.event.FriendMessageEvent
 import love.forte.simbot.event.GroupMessageEvent
@@ -43,6 +41,7 @@ import kotlin.time.Duration.Companion.minutes
 @SuppressWarnings("all")
 class Listener {
     private val log = LoggerFactory.getLogger(Listener::class.jvmName) // 日志
+    private var nudgeCount = 0
 
     /**
      * 菜单||项目文档||项目地址
@@ -437,7 +436,7 @@ class Listener {
         }
     }
 
-//    @RobotListen(isBoot = true, desc = "冒泡")
+    //    @RobotListen(isBoot = true, desc = "冒泡")
     suspend fun MessageEvent.aNaoDai() {
         val n = Random().nextInt(100)
         val url = "https://xiaobapi.top/api/xb/api/and.php"
@@ -550,6 +549,7 @@ class Listener {
                 send("解析失败")
                 return
             }
+
             else -> {
                 send(result.toJSONString())
                 return
@@ -561,14 +561,14 @@ class Listener {
         when {
             reg!!.contains("douyin") -> {       //抖音解析
                 val music = JSON.parseObject(data.getString("music"))
-                val title = if(data.getString("title").contains("@{0}")){
+                val title = if (data.getString("title").contains("@{0}")) {
                     "没有标题"
-                }else{
+                } else {
                     data.getString("title")
                 }
                 val bgmUrl = music.getString("url")
                 str = """
-                    Time: ${TimeUtil.getStringTime(data.getLong("time"),TimeUnit.SECONDS)}
+                    Time: ${TimeUtil.getStringTime(data.getLong("time"), TimeUnit.SECONDS)}
                     Title: ${title},
                     Author: ${data.getString("author")},
                     Uid: ${data.getString("uid")},
@@ -603,6 +603,19 @@ class Listener {
         send(message)
     }
 
-
+    @RobotListen(isBoot = true, desc = "戳一戳监听")
+    suspend fun MiraiNudgeEvent.nudge() {
+        if (originalEvent.target.id != RobotCore.BOTID.toLong()) return
+        if (nudgeCount >= 20) {
+            bot.launch { delay(300000) }
+            nudgeCount = 0
+            return
+        }
+        nudgeCount++
+        reply("哎呀，讨厌啦~")
+        originalEvent.from.nudge().sendTo(originalEvent.subject)
+        delay(30000)
+    }
 
 }
+

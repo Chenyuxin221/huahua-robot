@@ -1,5 +1,6 @@
 package com.huahua.robot.listener
 
+import cn.hutool.core.date.DateUtil
 import com.huahua.robot.api.mapper.FuncSwitchMapper
 import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.RobotCore
@@ -23,13 +24,25 @@ class test(
     suspend fun BotStartedEvent.start() {
         println("${RobotCore.ADMINISTRATOR}++++++++++++")
         RobotCore.setBot(bot)
-        RobotCore.getBot().contact(RobotCore.ADMINISTRATOR.ID)?.send("${getSentence()}\n---${TimeUtil.getNowTime()}")
+        RobotCore.getBot().contact(RobotCore.ADMINISTRATOR.ID)?.send(getStartupPrompt())
         initRedis() // 将数据库中的数据缓存进redis
     }
 
-    private fun getSentence(): String {
+    private fun getStartupPrompt(): String {
         val url = "https://xiaobai.klizi.cn/API/other/wtqh.php"
-        return HttpUtil.getBody(url)
+        val message = try {
+            "${HttpUtil.getBody(url)}\n\t\t---${TimeUtil.getNowTime()}"
+        } catch (e: Exception) {
+            val date = DateUtil.date()
+            val hours = date.hour(true) // 获取小时
+            val timeInterval = if (hours <= 6 || hours >= 23) "凌晨"
+            else if (hours in 7..9) "早上"
+            else if (hours in 10..13) "中午"
+            else if (hours in 14..19) "下午"
+            else "晚上"
+            "${timeInterval}好啊，现在是${TimeUtil.getNowTime()}"
+        }
+        return message
     }
 
     fun unregisterEvent() {
