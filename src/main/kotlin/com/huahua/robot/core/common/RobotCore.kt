@@ -81,6 +81,8 @@ class RobotCore(
          */
         var PYTHON_PATH: String? = null
 
+        var BOT_INFORMATION: HashMap<String, String> = hashMapOf()
+
         /**
          * 线程池
          */

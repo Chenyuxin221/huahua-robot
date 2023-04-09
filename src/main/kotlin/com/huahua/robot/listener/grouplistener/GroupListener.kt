@@ -20,7 +20,6 @@ import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
 import love.forte.simbot.ID
-import love.forte.simbot.component.mirai.bot.MiraiBot
 import love.forte.simbot.component.mirai.event.MiraiGroupMessageEvent
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.logger.LoggerFactory
@@ -46,37 +45,6 @@ class GroupListener(
 
     private val lotterySuffix: List<String> = listOf("jiang", "j", "奖", "wo", "w", "我") // 抽奖后缀
     private val log = LoggerFactory.getLogger(GroupListener::class.java)
-
-    /**
-     * 获取bot的skey pskey
-     * @receiver GroupMessageEvent
-     */
-    fun GroupMessageEvent.getPsKey() {
-        val bot = (bot as MiraiBot).originalBot
-        val client = bot.javaClass.getMethod("getClient").invoke(bot)
-        val wLoginSigInfo = client.javaClass.getMethod("getWLoginSigInfo").invoke(client)
-        val sKey = wLoginSigInfo.javaClass.getDeclaredMethod("getSKey").invoke(wLoginSigInfo)
-        val psKeyMap = wLoginSigInfo.javaClass.getDeclaredMethod("getPsKeyMap").invoke(wLoginSigInfo) as HashMap<*, *>
-        val map = hashMapOf<String, String>()
-
-        map["psKey"] = (psKeyMap["vip.qq.com"]?.getFieldValue("data") as ByteArray).decodeToString()
-        map["sKey"] = (sKey.getFieldValue("data") as ByteArray).decodeToString()
-    }
-
-    fun Any.getFieldValue(fieldName: String): Any {
-        return javaClass.getDeclaredField(fieldName).let {
-            it.isAccessible = true
-            it.get(this)
-        }
-    }
-
-    fun Any.invoke(methodName: String, vararg args: Any): Any {
-        return javaClass.getDeclaredMethod(methodName).let {
-            it.isAccessible = true
-            if (it.parameterCount > 0) it.invoke(this, args)
-            else it.invoke(this)
-        }
-    }
 
 
     @RobotListen("单抽功能", isBoot = true)

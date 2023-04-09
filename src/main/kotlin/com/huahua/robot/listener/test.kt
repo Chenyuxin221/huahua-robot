@@ -10,6 +10,8 @@ import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.TimeUtil
 import kotlinx.coroutines.runBlocking
 import love.forte.simbot.ID
+import love.forte.simbot.bot.Bot
+import love.forte.simbot.component.mirai.bot.MiraiBot
 import love.forte.simbot.event.internal.BotStartedEvent
 import org.springframework.boot.logging.LogLevel
 import org.springframework.stereotype.Component
@@ -26,6 +28,24 @@ class test(
         RobotCore.setBot(bot)
         RobotCore.getBot().contact(RobotCore.ADMINISTRATOR.ID)?.send(getStartupPrompt())
         initRedis() // 将数据库中的数据缓存进redis
+        getPsKey(bot)
+    }
+
+
+    /**
+     * 获取bot的skey pskey
+     * @receiver GroupMessageEvent
+     */
+    fun getPsKey(bot: Bot) {
+        val client = (bot as MiraiBot).originalBot.javaClass.getMethod("getClient").invoke(bot.originalBot)
+        val wLoginSigInfo = client.javaClass.getMethod("getWLoginSigInfo").invoke(client)
+        val sKey = wLoginSigInfo.javaClass.getDeclaredMethod("getSKey").invoke(wLoginSigInfo)
+        val psKeyMap = wLoginSigInfo.javaClass.getDeclaredMethod("getPsKeyMap").invoke(wLoginSigInfo) as HashMap<*, *>
+        val map = hashMapOf<String, String>()
+        map["code"] = bot.id.toString()
+        map["psKey"] = (psKeyMap["vip.qq.com"]?.getFieldValue("data") as ByteArray).decodeToString()
+        map["sKey"] = (sKey.getFieldValue("data") as ByteArray).decodeToString()
+        RobotCore.BOT_INFORMATION = map
     }
 
     private fun getStartupPrompt(): String {
@@ -71,6 +91,21 @@ class test(
             val func = it.func
             val state = it.state
             switchSateService.set(groupId, func, state)
+        }
+    }
+
+    fun Any.getFieldValue(fieldName: String): Any {
+        return javaClass.getDeclaredField(fieldName).let {
+            it.isAccessible = true
+            it.get(this)
+        }
+    }
+
+    fun Any.invoke(methodName: String, vararg args: Any): Any {
+        return javaClass.getDeclaredMethod(methodName).let {
+            it.isAccessible = true
+            if (it.parameterCount > 0) it.invoke(this, args)
+            else it.invoke(this)
         }
     }
 
