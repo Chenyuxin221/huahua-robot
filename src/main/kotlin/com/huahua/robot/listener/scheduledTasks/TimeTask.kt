@@ -61,25 +61,19 @@ class TimeTask(
      *
      */
     @Scheduled(cron = "0 0 0 * * ?")
-    fun updateMysql() {
-        val values = switchSateService.getKeys("*")
-        values.forEach {
+    fun updateMysql() = switchSateService.getKeys("*").forEach {
+        try {
             val value = switchSateService.getValue(it)
             val temp = it.split(":")
-            val groupId = temp[0]
-            val func = temp[1]
-            val url = "http://127.0.0.1:8080/config/switch/set?groupId=${groupId}&func=${func}&state=${value}"
+            val url = "http://127.0.0.1:8080/config/switch/set?groupId=${temp[0]}&func=${temp[1]}&state=${value}"
             val result = HttpUtil.get(url).response
-            try {
-                val json = JSON.parseObject(result)
-                if (json.getIntValue("code") != 200) {
-                    Sender.sendAdminMsg("更新失败")
-                    return
-                }
-            } catch (e: Exception) {
-                Sender.sendAdminMsg("更新失败：${e.message}")
-                e.printStackTrace()
+            val json = JSON.parseObject(result)
+            if (json.getIntValue("code") != 200) {
+                Sender.sendAdminMsg("更新失败")
+                return
             }
+        } catch (e: Exception) {
+            logger(LogLevel.ERROR) { "update failed：${e.printStackTrace()}" }
         }
     }
 
@@ -108,14 +102,18 @@ class TimeTask(
                     arrayListOf("对了，今天是父亲节呢！你们有和父亲通电话吗！")
                 } else return //没有公历节日则返回
             }
+            val greetings = arrays.random()
+            val bot = RobotCore.getBot()
+            runBlocking { bot.groups.asFlow().collect { it.send(greetings) } }
+            return
         }
-        val blessings = blessingsArrays?.random()
-        blessings.isNullOrEmpty().then { return }
+        val blessings = blessingsArrays.random()
+        blessings.isEmpty().then { return }
         val bot = RobotCore.getBot()
         val groups = bot.groups
         runBlocking {
             groups.asFlow().collect {
-                it.send(blessings!!)
+                it.send(blessings)
             }
         }
     }

@@ -2,10 +2,7 @@ package com.huahua.robot.listener.grouplistener
 
 import com.huahua.robot.config.RobotConfig
 import com.huahua.robot.core.annotation.RobotListen
-import com.huahua.robot.core.common.Sender
-import com.huahua.robot.core.common.isNull
-import com.huahua.robot.core.common.logger
-import com.huahua.robot.core.common.send
+import com.huahua.robot.core.common.*
 import com.huahua.robot.service.SwitchSateService
 import com.huahua.robot.utils.Permission
 import com.huahua.robot.utils.PermissionUtil.Companion.authorPermission
@@ -25,6 +22,7 @@ import love.forte.simbot.message.At
 import love.forte.simbot.message.buildMessages
 import love.forte.simbot.tryToLong
 import net.mamoe.mirai.contact.MemberPermission
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 /**
@@ -45,6 +43,7 @@ class JoinGroupListener(
     private var state = hashMapOf<ID, Boolean>()
     private val groupReply = hashMapOf<String, Timer<MiraiMemberJoinEvent>>()
     private val shieldGroups = robotConfig.joinGroupShield
+    private var result: Int? = null
 
     @RobotListen("测试")
     @Filter("入群回复状态")
@@ -70,29 +69,48 @@ class JoinGroupListener(
     suspend fun MiraiMemberJoinEvent.joinGroup() {
         val group = group() //所在群
         val member = member()   //加群人
+        result = null //初始化
         group().send("呐呐，欢迎 ${member.nickname} 加入本聊,请查看群公告")
         group().send("你大概是第${group.currentMember - 1}个加入本群的")
         group().send("别忘了给我点点小星星哦\nhttps://github.com/Chenyuxin221/huahua-robot")
         group().send("最后最后，有需要的话可以发送\".h|.help\"查看帮助哦")
-
         //屏蔽群聊，因为少部分群人少不太需要此功能 故在代码屏蔽
+        val switchName = "groupValidate"
         if (!shieldGroups.isNullOrEmpty()) if (group().id.toString() in shieldGroups) return
-
-        if (bot.originalBot.getGroup(group().id.tryToLong())!!.botPermission != MemberPermission.MEMBER) {
+        var validate = switchSateService.get(group.id.toString(), switchName)
+        validate?.let {
+            if (!it) return
+        }.isNull {
+            // 初始化
+            switchSateService.set(group.id.toString(), switchName, true)
+        }
+        validate = switchSateService.get(group.id.toString(), switchName)
+        if (validate!! && bot.originalBot.getGroup(group().id.tryToLong())!!.botPermission != MemberPermission.MEMBER) {
             val timeout = 30L   //超时时间
+            val a = Random().nextInt(1, 101)
+            val b = Random().nextInt(1, 101)
+            val c = Random().nextInt(2)
             val message = buildMessages {
                 +At(member().id)
-                +" 请你在「${timeout}分钟」内发言，不然会被请出去的哦"
+                +" 请你在「${timeout}分钟」内发送「${a} ${if (c == 0) "+" else "-"} $b」的计算结果，不然会被请出去的哦"
             }
             val timer = Timer(timeout, TimeUnit.MINUTES, this, true) {
-                onStart { runBlocking { group().send(message) } }
+                onStart {
+                    result = calc(a, b, c)
+                    runBlocking {
+                        group().send(message)
+                    }
+                }
                 onCancel {
                     logger { "已终止计时器" }
+                    groupReply.clear()
                 }
                 onFinish {
                     runBlocking {
-                        group().member(member.id)?.kick("没在指定时间内回复，如需入群请重新申请")
-                        group().send("看来他没有在「${timeout}分钟」内发言呢")
+                        // 暂时不踢人了
+//                        group().member(member.id)?.kick("没在指定时间内回复，如需入群请重新申请")
+                        group().send("看来他在「${timeout}分钟」内没有计算出结果呢")
+                        groupReply.clear()
                     }
                 }
             }
@@ -100,10 +118,42 @@ class JoinGroupListener(
         }
     }
 
+    private fun calc(a: Int, b: Int, oper: Int) = when (oper) {
+        0 -> a + b
+        1 -> a - b
+        else -> 999
+    }
+
     @RobotListen("回复监听", isBoot = true)
     suspend fun GroupMessageEvent.replyToListen() {
         val key = "${group().id}:${author().id}"
-        groupReply[key]?.cancel()
+        val regex = "\\d+".toRegex()
+        val r = regex.find(messageContent.plainText)?.value
+        val reply = groupReply[key]
+        if (reply != null) {
+            r?.let { s ->
+                result?.let {
+                    if (result == s.toInt()) {
+                        reply("√ 验证失败，请v管理员${group().member(RobotCore.ADMINISTRATOR.ID)?.nickOrUsername ?: ""}50跳过验证(bushi)")
+                        reply.cancel()
+
+                    } else {
+                        val a = Random().nextInt(1, 101)
+                        val b = Random().nextInt(1, 101)
+                        val c = Random().nextInt(2)
+                        result = calc(a, b, c)
+                        send("这你都不会，建议读个小学吧,已刷新题目「${a} ${if (c == 0) "+" else "-"} $b 」")
+                    }
+                    return
+                }.isNull {
+                    reply.cancel()
+                    return
+                }
+
+            }.isNull {
+                send("格式校验失败！！请输入数字")
+            }
+        }
     }
 
     var a: JoinRequestEvent? = null     //入群请求

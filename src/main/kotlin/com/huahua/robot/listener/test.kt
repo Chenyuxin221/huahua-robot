@@ -24,7 +24,6 @@ class test(
 
     @RobotListen("启动事件")
     suspend fun BotStartedEvent.start() {
-        println("${RobotCore.ADMINISTRATOR}++++++++++++")
         RobotCore.setBot(bot)
         RobotCore.getBot().contact(RobotCore.ADMINISTRATOR.ID)?.send(getStartupPrompt())
         initRedis() // 将数据库中的数据缓存进redis
@@ -51,7 +50,9 @@ class test(
     private fun getStartupPrompt(): String {
         val url = "https://xiaobai.klizi.cn/API/other/wtqh.php"
         val message = try {
-            "${HttpUtil.getBody(url)}\n\t\t---${TimeUtil.getNowTime()}"
+            val body = HttpUtil.getBody(url)
+            if (body.isEmpty()) throw Exception("空的body")
+            "${body}\n\t\t---${TimeUtil.getNowTime()}"
         } catch (e: Exception) {
             val date = DateUtil.date()
             val hours = date.hour(true) // 获取小时

@@ -19,6 +19,7 @@
         <kotlin.version>1.7.21</kotlin.version>
         <simboot.version>3.0.0-RC.3</simboot.version>
         <mirai.version>3.0.0.0-M4</mirai.version>
+        <nlp.version>4.5.4</nlp.version>
     </properties>
 
     <!--        <repositories>-->
@@ -57,6 +58,28 @@
             <groupId>com.baidubce</groupId>
             <artifactId>api-explorer-sdk</artifactId>
             <version>1.0.3.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>${nlp.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>${nlp.version}</version>
+            <classifier>models</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>${nlp.version}</version>
+            <classifier>models-chinese</classifier>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/lib/stanford-corenlp-models-chinese.jar</systemPath>
         </dependency>
 
         <!--胡图图工具包-->
@@ -103,12 +126,6 @@
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
-        <!--        猫猫码工具-->
-        <dependency>
-            <groupId>love.forte.simbot.component</groupId>
-            <artifactId>simbot-component-mirai-extra-catcode</artifactId>
-            <version>${mirai.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -172,11 +189,11 @@
         </dependency>
 
         <!--chatgpt 第三方接口-->
-        <dependency>
-            <groupId>com.github.plexpt</groupId>
-            <artifactId>chatgpt</artifactId>
-            <version>1.1.2</version>
-        </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>com.github.plexpt</groupId>-->
+        <!--            <artifactId>chatgpt</artifactId>-->
+        <!--            <version>1.1.2</version>-->
+        <!--        </dependency>-->
 
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -208,6 +225,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.6.7</version>
                 <configuration>
+                    <includeSystemScope>true</includeSystemScope>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

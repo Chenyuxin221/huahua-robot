@@ -5,6 +5,7 @@ import com.huahua.robot.api.entity.FuncSwitch
 import com.huahua.robot.api.mapper.FuncSwitchMapper
 import com.huahua.robot.api.result.Result
 import com.huahua.robot.api.result.ResultStatus
+import com.huahua.robot.core.common.logger
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -51,7 +52,9 @@ class SwitchStatusController(
         map["groupId"] = groupId
         map["func"] = func
         val res = mapper.selectByMap(map).firstOrNull()
-        println(res)
+        logger {
+            "Group「${groupId}」function「${func}」the current status is $state"
+        }
         if (res != null) {
             val wrapper = UpdateWrapper<FuncSwitch>()
             wrapper.eq("groupId", groupId).eq("func", func).set("state", state)
@@ -59,6 +62,9 @@ class SwitchStatusController(
         } else {
             map["state"] = state
             mapper.insert(FuncSwitch(groupId = groupId, func = func, state = state))
+        }
+        logger {
+            "Group「${groupId}」 change the status「${func}」 to $state"
         }
         return Result.success(FuncSwitch(groupId = groupId, func = func, state = state))
     }

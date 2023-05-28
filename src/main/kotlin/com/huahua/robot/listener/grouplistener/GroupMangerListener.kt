@@ -82,6 +82,7 @@ class GroupMangerListener {
                     group().member(it.target)?.mute(time.minutes)
                 }
             }
+            list.isEmpty().then { return }
             val message = buildMessages {
                 this.at(author().id)
                 this.text(" 已将")
@@ -93,7 +94,6 @@ class GroupMangerListener {
             }
             group().send(message)
         } catch (e: Exception) {
-            group().send(e.message!!)
             return
         }
     }

@@ -245,7 +245,6 @@ class Listener {
     suspend fun MessageEvent.lookAtTheLegs() {
         val url = "http://ovooa.com/API/meizi/"
         val tui = HttpUtil.getJsonClassFromUrl(url, Tuizi::class.java).text // 获取腿实体类
-        println(tui)
         send(tui.getImageMessage())    // 发送图片
     }
 

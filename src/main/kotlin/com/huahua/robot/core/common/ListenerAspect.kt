@@ -56,6 +56,16 @@ class ListenerAspect {
                 if (annotation.isBoot && !RobotCore.BOOT_MAP.getOrDefault(group.id.toString(), false)) {
                     return proceedFailed("当前群未开机")
                 }
+
+                // 判断成员是否在黑名单上
+                RobotCore.GROUP_BLACKLIST.forEach {
+                    if (it.groupCode == group.id.toString() &&
+                        it.memberCode == author.id.toString()
+                    ) {
+                        return proceedFailed("成员为黑名单成员")
+                    }
+                }
+
                 // 判断是否有权限
                 if (
                     annotation.permission != RobotPermission.MEMBER &&

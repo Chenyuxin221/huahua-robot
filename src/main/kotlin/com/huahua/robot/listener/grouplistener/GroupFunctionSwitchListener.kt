@@ -75,6 +75,7 @@ class GroupFunctionSwitchListener(
         "chatgpt", "openai", "聊天" -> "聊天"
         "抽奖" -> "抽奖"
         "加群自动同意", "自动同意" -> "加群自动同意"
+        "groupValidate", "群验证" -> "groupValidate"
         else -> ""
     }
 

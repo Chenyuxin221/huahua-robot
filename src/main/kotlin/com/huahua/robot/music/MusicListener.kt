@@ -26,10 +26,10 @@ import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
-import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.component.mirai.message.MiraiSendOnlyAudio
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.event.MessageEvent
+import love.forte.simbot.logger.LoggerFactory
 import love.forte.simbot.resources.Resource.Companion.toResource
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.jvm.jvmName
@@ -311,7 +311,6 @@ class MusicListener {
         text?.also {
             Regex(pattern).find(text)?.groups?.get(1)?.value?.let { // 如果不为空
                 val music = HttpUtil.getJsonClassFromUrl("${url}&n=${it.toInt()}", NeteaseMusic::class.java)    // 获取歌曲
-                println(music)
                 when {
                     text.startsWith("下载") -> send("${downloadTip}${music.url}")  // 发送下载提示
                     else -> {   // 如果不是下载

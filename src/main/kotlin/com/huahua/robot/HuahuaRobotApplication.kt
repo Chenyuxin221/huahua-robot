@@ -12,6 +12,5 @@ import org.springframework.scheduling.annotation.EnableScheduling
 class HuahuaRobotApplication
 
 fun main(args: Array<String>) {
-    val a = runApplication<HuahuaRobotApplication>(*args)
-
+    runApplication<HuahuaRobotApplication>(*args)
 }

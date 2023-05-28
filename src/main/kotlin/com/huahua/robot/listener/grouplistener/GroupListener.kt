@@ -8,13 +8,18 @@ import com.huahua.robot.core.annotation.RobotListen
 import com.huahua.robot.core.common.*
 import com.huahua.robot.entity.LuckyTime
 import com.huahua.robot.service.SwitchSateService
-import com.huahua.robot.utils.*
 import com.huahua.robot.utils.FileUtil.getTempImage
 import com.huahua.robot.utils.FileUtil.url
+import com.huahua.robot.utils.HttpUtil
 import com.huahua.robot.utils.MessageUtil.Companion.getImageMessage
+import com.huahua.robot.utils.Permission
 import com.huahua.robot.utils.PermissionUtil.Companion.authorPermission
 import com.huahua.robot.utils.PermissionUtil.Companion.botPermission
+import com.huahua.robot.utils.PostType
+import com.huahua.robot.utils.TimeUtil
 import com.huahua.robot.utils.TimeUtil.name
+import edu.stanford.nlp.pipeline.CoreDocument
+import edu.stanford.nlp.pipeline.StanfordCoreNLP
 import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
@@ -50,7 +55,6 @@ class GroupListener(
     @RobotListen("单抽功能", isBoot = true)
     suspend fun GroupMessageEvent.lucky() {
         var res = switchSateService.get(group().id.toString(), "抽奖")
-        println("${res}----")
         if (res == null) {
             switchSateService.set(group().id.toString(), "抽奖", false)
             res = switchSateService.get(group().id.toString(), "抽奖")
@@ -107,7 +111,7 @@ class GroupListener(
         }.isNull {    // 未匹配到阿拉伯数字，匹配汉字
             reg = """[零一二三四五六七八九十百壹贰叁肆伍陆柒捌玖拾佰]*""".toRegex().find(num)?.value
             if (reg == null) {
-                println("抽奖失败，请检查语法")
+                logger { "The draw failed, please check the grammar" }
                 return
             }
             result = chineseNumeralConversion(reg!!)
@@ -732,6 +736,50 @@ class GroupListener(
         }
         RobotCore.AiBLACKLIST = result
         return true
+    }
+
+    /**
+     * 刷听歌时长
+     * @receiver GroupMessageEvent 群监听
+     */
+    @RobotListen(isBoot = true, desc = "我刷听歌时长")
+    @Filter("刷听歌时长")
+    suspend fun GroupMessageEvent.musicTimes() {
+        val api = "https://fkapi.rjk66.cn/qqsc/qqsc.php"
+        val id = author().id.toString()
+        val response = HttpUtil.getBody("$api?uin=$id")
+        reply(JSON.parseObject(response).getString("msg"))
+    }
+
+
+    @RobotListen(isBoot = true, desc = "违禁词")
+    suspend fun GroupMessageEvent.prohibitedWords() {
+//        val pinyin = PinyinUtil.getPinyin(messageContent.plainText).split(" ").filter { it.isNotEmpty() }.joinToString(" ")
+//        val engine = TokenizerUtil.createEngine()
+//        val result = engine.parse(messageContent.plainText)
+//        result.forEach{
+//            println(it.text)
+//        }
+        // 政治判断
+        val isPolitical = isPoliticalContent(messageContent.plainText)
+        if (isPolitical) {
+            logger { "The text contains illegal political content" }
+            reply("疑似政治违规内容")
+        }
+    }
+
+    private fun isPoliticalContent(text: String): Boolean {
+        /**
+         * 中文包下载地址：https://huggingface.co/stanfordnlp/corenlp-chinese/tree/v4.5.4
+         * 下载完成后加到resources/lib 目录
+         */
+        val pipeline = StanfordCoreNLP("StanfordCoreNLP-chinese.properties")
+        val document = CoreDocument(text)
+        pipeline.annotate(document)
+        val politicalEntities = document.entityMentions().filter {
+            it.entityType() == "POLITICAL"
+        }
+        return politicalEntities.isNotEmpty()
     }
 
 }

@@ -3,6 +3,8 @@ package com.huahua.robot.core.common
 
 import com.huahua.robot.config.AccountConfig
 import com.huahua.robot.config.RobotConfig
+import com.huahua.robot.core.entity.GroupBlackList
+import com.huahua.robot.core.mapper.GroupBlackListMapper
 import com.huahua.robot.core.mapper.GroupBootStateMapper
 import com.huahua.robot.utils.SpringContextUtil
 import love.forte.simboot.spring.autoconfigure.EnableSimbot
@@ -26,6 +28,7 @@ import javax.annotation.PostConstruct
 class RobotCore(
     private val listenerManager: EventListenerManager,
     private val groupBootStateMapper: GroupBootStateMapper,
+    private val groupBlackListMapper: GroupBlackListMapper,
     private val applicationContext: ApplicationContext,
     private val accountConfig: AccountConfig,
     private val robotConfig: RobotConfig,
@@ -50,10 +53,14 @@ class RobotCore(
     }
 
     private fun initGroupBootMap() {
+        // 缓存群开关状态
         groupBootStateMapper.selectList(null)?.forEach {
             BOOT_MAP[it.groupCode] = it.state
         }
-
+        // 缓存群黑名单列表
+        groupBlackListMapper.selectList(null)?.forEach {
+            GROUP_BLACKLIST.add(it)
+        }
     }
 
 
@@ -138,6 +145,11 @@ class RobotCore(
          * 缓存群开关
          */
         val BOOT_MAP: MutableMap<String?, Boolean> = HashMap()
+
+        /**
+         * 群黑名单
+         */
+        val GROUP_BLACKLIST: MutableList<GroupBlackList> = mutableListOf()
 
         var robotCore: RobotCore? = null
 
