@@ -79,7 +79,7 @@
             <version>${nlp.version}</version>
             <classifier>models-chinese</classifier>
             <scope>system</scope>
-            <systemPath>${pom.basedir}/src/main/resources/lib/stanford-corenlp-models-chinese.jar</systemPath>
+            <systemPath>${pom.basedir}/lib/stanford-corenlp-models-chinese.jar</systemPath>
         </dependency>
 
         <!--胡图图工具包-->
@@ -355,4 +355,47 @@
             </plugin>
         </plugins>
     </build>
+
+    <!--    <build>-->
+    <!--        <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>-->
+    <!--        <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>-->
+    <!--        <plugins>-->
+    <!--            <plugin>-->
+    <!--                <groupId>org.springframework.boot</groupId>-->
+    <!--                <artifactId>spring-boot-maven-plugin</artifactId>-->
+    <!--                <version>2.6.7</version>-->
+    <!--                <configuration>-->
+    <!--                    <includeSystemScope>true</includeSystemScope>-->
+    <!--                    <excludes>-->
+    <!--                        <exclude>-->
+    <!--                            <groupId>org.projectlombok</groupId>-->
+    <!--                            <artifactId>lombok</artifactId>-->
+    <!--                        </exclude>-->
+    <!--                    </excludes>-->
+    <!--                    <fork>true</fork>-->
+    <!--                </configuration>-->
+    <!--            </plugin>-->
+    <!--            <plugin>-->
+    <!--                <groupId>org.jetbrains.kotlin</groupId>-->
+    <!--                <artifactId>kotlin-maven-plugin</artifactId>-->
+    <!--                <version>${kotlin.version}</version>-->
+    <!--                <configuration>-->
+    <!--                    <args>-->
+    <!--                        <arg>-Xjsr305=strict</arg>-->
+    <!--                    </args>-->
+    <!--                    <compilerPlugins>-->
+    <!--                        <plugin>spring</plugin>-->
+    <!--                    </compilerPlugins>-->
+    <!--                </configuration>-->
+    <!--                <dependencies>-->
+    <!--                    <dependency>-->
+    <!--                        <groupId>org.jetbrains.kotlin</groupId>-->
+    <!--                        <artifactId>kotlin-maven-allopen</artifactId>-->
+    <!--                        <version>${kotlin.version}</version>-->
+    <!--                    </dependency>-->
+    <!--                </dependencies>-->
+    <!--            </plugin>-->
+    <!--        </plugins>-->
+    <!--    </build>-->
+
 </project>

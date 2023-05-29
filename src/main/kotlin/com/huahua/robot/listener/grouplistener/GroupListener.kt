@@ -761,7 +761,7 @@ class GroupListener(
     private fun isPoliticalContent(text: String): Boolean {
         /**
          * 中文包下载地址：https://huggingface.co/stanfordnlp/corenlp-chinese/tree/v4.5.4
-         * 下载完成后加到resources/lib 目录
+         * 下载完成后加到项目根目录（与 pom 同级）的lib目录下
          */
         val pipeline = StanfordCoreNLP("StanfordCoreNLP-chinese.properties")
         val document = CoreDocument(text)
