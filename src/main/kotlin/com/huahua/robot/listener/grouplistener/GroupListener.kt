@@ -338,16 +338,6 @@ class GroupListener(
         }
     }
 
-    @RobotListen(desc = "点赞功能", isBoot = true)
-    @Filter("赞我")
-    suspend fun GroupMessageEvent.praiseMe() =
-        "praiseMe.jpg".getTempImage("https://api.klizi.cn/API/ce/zan.php?qq=${author().id}".url())?.also {
-            send(it.getImageMessage())
-        }.isNull {
-            send("图片获取失败，请稍后再试")
-        }?.delete()
-
-
     @RobotListen(isBoot = true, desc = "作图服务-动态图片")
     suspend fun GroupMessageEvent.gifPicture() {
         messageContent.messages.forEach {

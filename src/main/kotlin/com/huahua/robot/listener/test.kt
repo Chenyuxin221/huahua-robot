@@ -61,7 +61,7 @@ class test(
             else if (hours in 10..13) "中午"
             else if (hours in 14..19) "下午"
             else "晚上"
-            "${timeInterval}好啊，现在是${TimeUtil.getNowTime()}"
+            "${timeInterval}好啊，现在时间是${TimeUtil.getNowTime()}"
         }
         return message
     }

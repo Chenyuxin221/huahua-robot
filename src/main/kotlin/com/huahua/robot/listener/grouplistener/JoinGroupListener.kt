@@ -79,6 +79,7 @@ class JoinGroupListener(
         if (!shieldGroups.isNullOrEmpty()) if (group().id.toString() in shieldGroups) return
         var validate = switchSateService.get(group.id.toString(), switchName)
         validate?.let {
+            logger { it.toString() }
             if (!it) return
         }.isNull {
             // 初始化

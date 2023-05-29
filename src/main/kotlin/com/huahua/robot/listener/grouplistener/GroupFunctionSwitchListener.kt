@@ -37,7 +37,10 @@ class GroupFunctionSwitchListener(
 
         val group = group().id.toString()
         val switch = getSwitch(name)
-        switch.isEmpty().then { return }    //不是指定关键词则直接返回
+        switch.isEmpty().then {
+            reply("未设置此关键字")
+            return
+        }    //不是指定关键词则直接返回
         switchSateService.set(group, switch, true)
         val result = switchSateService.get(group, switch)
         result?.then {
