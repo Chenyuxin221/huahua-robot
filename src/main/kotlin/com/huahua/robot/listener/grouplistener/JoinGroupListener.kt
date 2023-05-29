@@ -15,6 +15,7 @@ import love.forte.simboot.annotation.Filter
 import love.forte.simbot.ID
 import love.forte.simbot.component.mirai.event.MiraiMemberJoinEvent
 import love.forte.simbot.component.mirai.event.MiraiMemberJoinRequestEvent
+import love.forte.simbot.component.mirai.event.MiraiMemberLeaveEvent
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.event.JoinRequestEvent
 import love.forte.simbot.event.RequestEvent
@@ -91,6 +92,7 @@ class JoinGroupListener(
             val a = Random().nextInt(1, 101)
             val b = Random().nextInt(1, 101)
             val c = Random().nextInt(2)
+            val key = "${group.id}:${member.id}"
             val message = buildMessages {
                 +At(member().id)
                 +" 请你在「${timeout}分钟」内发送「${a} ${if (c == 0) "+" else "-"} $b」的计算结果，不然会被请出去的哦"
@@ -104,7 +106,7 @@ class JoinGroupListener(
                 }
                 onCancel {
                     logger { "已终止计时器" }
-                    groupReply.clear()
+                    groupReply.remove(key)
                 }
                 onFinish {
                     runBlocking {
@@ -115,8 +117,34 @@ class JoinGroupListener(
                     }
                 }
             }
-            groupReply["${group.id}:${member.id}"] = timer
+            groupReply[key] = timer
         }
+    }
+
+    @RobotListen(isBoot = true, desc = "退群监听")
+    suspend fun MiraiMemberLeaveEvent.leaveGroup1() {
+        /** 涉及到的群员 **/
+        val user = member()
+
+        /** 涉及到的群 **/
+        val group = group()
+
+        /** 拿东西的key **/
+        val key = "${group.id}:${user.id}"
+
+        /** 尝试拿出退群人员的做题计时器 **/
+        val result = groupReply[key]
+
+        /** 能拿出来说明新人回答不出问题 **/
+        result?.let {
+            /** 结束计时器 **/
+            groupReply[key]?.cancel()
+            /** 删除map里的计时器 **/
+            groupReply.remove(key)
+            /** 拿不出来说明不是新人，不做处理 **/
+        } ?: return
+
+
     }
 
     private fun calc(a: Int, b: Int, oper: Int) = when (oper) {
@@ -128,7 +156,7 @@ class JoinGroupListener(
     @RobotListen("回复监听", isBoot = true)
     suspend fun GroupMessageEvent.replyToListen() {
         val key = "${group().id}:${author().id}"
-        val regex = "\\d+".toRegex()
+        val regex = """^-?\d+$""".toRegex()
         val r = regex.find(messageContent.plainText)?.value
         val reply = groupReply[key]
         if (reply != null) {
@@ -137,7 +165,7 @@ class JoinGroupListener(
                     if (result == s.toInt()) {
                         reply("√ 验证失败，请v管理员${group().member(RobotCore.ADMINISTRATOR.ID)?.nickOrUsername ?: ""}50跳过验证(bushi)")
                         reply.cancel()
-
+                        groupReply.remove(key)
                     } else {
                         val a = Random().nextInt(1, 101)
                         val b = Random().nextInt(1, 101)
