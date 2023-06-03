@@ -29,7 +29,9 @@ import love.forte.simbot.message.*
 import love.forte.simbot.resources.FileResource
 import love.forte.simbot.resources.Resource.Companion.toResource
 import love.forte.simbot.resources.URLResource
+import love.forte.simbot.tryToLong
 import org.springframework.stereotype.Component
+import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.jvm.jvmName
@@ -48,13 +50,55 @@ class Listener {
      * @receiver GroupMessageEvent
      */
     @RobotListen(isBoot = true, desc = "菜单服务")
-    @Filter("\\.h|\\.help", matchType = MatchType.REGEX_MATCHES)
+    @Filter(".h", matchType = MatchType.REGEX_MATCHES)
     suspend fun MessageEvent.menu() {
+        if (this is GroupMessageEvent) {
+            if (group().id.tryToLong() == 745212995L) {
+                val imgName = "menu.jpg"
+                val imgUrl =
+                    "https://c2cpicdw.qpic.cn/offpic_new/1849950046//1849950046-2298352361-0D5D6F2124C04A6B032BCB743CF3AD99/0?term=2&is_origin=1"
+                val imgPath = FileUtil.imagePath() + "menu.jpg"
+                if (File(imgPath).isFile)
+                    send(File(imgPath).getImageMessage())
+                else
+                    imgName.getTempImage(imgUrl.url())?.let {
+                        send(it.getImageMessage())
+                    }
+
+            }
+        }
         val functionMenuUrl = "https://www.yuque.com/qingsi-zwnmu/xyuvvi/wrbzgy"    // 项目文档
         val gitHubUrl = "https://github.com/Chenyuxin221/huahua-robot"           // 项目地址
         val result = "功能菜单：${functionMenuUrl}\n项目地址：${gitHubUrl}"         // 菜单内容
         send(result)                                              // 发送菜单
     }
+
+    @RobotListen(isBoot = true, desc = "盗版法欧莉酱")
+    @Filter(".h{{num}}", targets = Filter.Targets(groups = arrayOf("745212995")))
+    suspend fun GroupMessageEvent.menu(@FilterValue("num") num: Int) {
+        val msg = when (num) {
+            0 -> "https://www.yuque.com/docs/share/43264d27-99a7-4287-97c0-b387f5b0947e"
+            1 -> """
+                simbot2文档:  https://www.yuque.com/docs/share/e4b99402-40a6-4394-850f-6b87f7b7395f
+
+                simbot3官网:  https://simbot.forte.love
+
+                simbot3文档引导站:  https://docs.simbot.forte.love
+
+                simbot3 GitHub: https://github.com/simple-robot
+            """.trimIndent()
+
+            2 -> "问题反馈: https://github.com/simple-robot/simpler-robot/issues/new/choose"
+            3 -> "CatCode v1: https://github.com/ForteScarlet/CatCode\nCatCode v2: https://github.com/ForteScarlet/CatCode2"
+            11 -> "2.xのDemo们：\nhttps://github.com/simple-robot"
+            12 -> "示例代码: https://github.com/simple-robot/simbot-examples\nMaven Archetypes:\nhttps://github.com/simple-robot/simbot-archetypes"
+            30 -> "tg群聊/频道:\nhttps://t.me/joinchat/UidrhxyTWuvWeylsEwNHIA\nhttps://t.me/simple_robot_rua"
+            90 -> "粘贴板: \nhttps://paste.ubuntu.com/"
+            else -> "没有编号[${num}]的帮助啦."
+        }
+        send(msg)
+    }
+
 
     /**
      * 涩图功能

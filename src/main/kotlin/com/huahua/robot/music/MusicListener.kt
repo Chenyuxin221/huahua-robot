@@ -22,7 +22,6 @@ import com.huahua.robot.utils.MessageUtil.Companion.getNeteaseCloudMusicShare
 import com.huahua.robot.utils.MessageUtil.Companion.getQQMusicShare
 import com.huahua.robot.utils.PostType
 import com.huahua.robot.utils.UrlUtil
-import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType
@@ -40,7 +39,7 @@ import kotlin.reflect.jvm.jvmName
  * @author 花云端
  * @date 2022-05-18 16:43
  */
-@Beans
+//@Beans
 class MusicListener {
     private val log = LoggerFactory.getLogger(MusicListener::class.jvmName) // 获取日志记录器
     private val listTip = "\n--------------------\n" +
